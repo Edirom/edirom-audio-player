@@ -1,4 +1,4 @@
-class AudioPlayer extends HTMLElement {
+class EdiromAudioPlayer extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -47,4 +47,4 @@ class AudioPlayer extends HTMLElement {
   }
 }
 
-customElements.define('audio-player', AudioPlayer);
+customElements.define('edirom-audio-player', EdiromAudioPlayer);
