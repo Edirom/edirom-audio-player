@@ -83,8 +83,6 @@ class EdiromAudioPlayer extends HTMLElement {
     var playerInnerHTML;
     const displayMode = this.getDisplayMode();
 
-    console.log(displayMode);
-
     switch(displayMode) { 
       case 'player-simple':
         playerInnerHTML = this.getControlsHTML();
@@ -192,6 +190,7 @@ class EdiromAudioPlayer extends HTMLElement {
    */
   addEventListeners() {
     
+    /** Event listener for play/pause button */
     this.shadowRoot.querySelector('#playButton').addEventListener('click', () => {
       const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
       const playButton = this.shadowRoot.querySelector('#playButton');
@@ -207,6 +206,11 @@ class EdiromAudioPlayer extends HTMLElement {
       }
     });
     
+    /** 
+     * Event listener for prev/next buttons.
+     * It listens to all elements with class .track-toggler and reads the data-tracksteps attribute to get an info how many tracks
+     * should be forwarded or rewinded. This allows for buttons to forward or rewind any number of tracks -> +/-n steps 
+     */
     this.shadowRoot.querySelectorAll('.track-toggler').forEach(button => {
       button.addEventListener('click', (evt) => {
 
@@ -216,8 +220,6 @@ class EdiromAudioPlayer extends HTMLElement {
         var nextTrackIndex = (parseInt(this.getCurrentTrack()) + parseInt(trackStep));
         if(nextTrackIndex < 0) { nextTrackIndex = tracks.length - 1 }
         if(nextTrackIndex >= tracks.length) { nextTrackIndex = 0 }
-
-        console.log(nextTrackIndex);
         
         this.setCurrentTrack(nextTrackIndex);
         
