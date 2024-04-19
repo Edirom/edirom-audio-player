@@ -20,48 +20,9 @@ class EdiromAudioPlayer extends HTMLElement {
   // attribute change
   attributeChangedCallback(property, oldValue, newValue) {
 
-    this[ property.substring(4) ] = newValue;   
+    // handle property change
+    this.set(property.substring(4), newValue);
 
-
-    // set new value to get-* attribute 
-    this.setAttribute("get-"+property.substring(4), newValue);
-
-     
-
-    const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
-
-
-    switch(property) {
-      case 'set-tracks':
-
-        break;
-      case 'set-height':
-        
-        break;
-      case 'set-width':
-        
-        break;
-      case 'set-state':
-        this.setState(newValue);
-        break;
-      case 'set-track':
-        this.playTrack(newValue);
-        break;
-      case 'set-time':
-        //audioPlayer.currentTime = newValue;
-        break;
-      case 'set-end':
-        
-        break;
-      case 'set-playbackrate':
-        
-        break;
-      case 'set-mode':
-        
-        break;
-      default:
-        console.log("Invalid attribute: '"+property+"'");
-    }
   }
 
   // render component
@@ -77,7 +38,6 @@ class EdiromAudioPlayer extends HTMLElement {
           display: flex;
           align-items: center;
           gap: 10px;
-          border: 2px solid #aaa;
         }
         #controls button {
           display: inline-block;
@@ -202,13 +162,15 @@ class EdiromAudioPlayer extends HTMLElement {
   }
 
 
+   /**
+   * Add methods for HTML generation
+   */
+
   getPlayerHTML() {
 
     let playerInnerHTML;
-    const displayMode = this.getAttribute('set-mode');
 
-
-    switch(displayMode) { 
+    switch(this.mode) { 
       case 'controls-sm':
         playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'rewind', 'play', 'forward', 'next', 'tracksAdd']);
         break;
@@ -219,6 +181,7 @@ class EdiromAudioPlayer extends HTMLElement {
       case 'controls-lg':
         playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'rewind', 'play', 'forward', 'next', 'tracksAdd']);
         playerInnerHTML += this.getTimeHTML();
+        playerInnerHTML += this.getTracksHTML();
         break;
       case 'tracks-sm':
         playerInnerHTML = this.getTracksHTML();
@@ -231,10 +194,10 @@ class EdiromAudioPlayer extends HTMLElement {
         break;
       default:
         playerInnerHTML = '<p>Error: Invalid display mode</p>';
-        console.log("Invalid display mode: '"+displayMode+"'");
+        console.log("Invalid display mode: '"+this.mode+"'");
     }
 
-    return '<div id="player" class="'+displayMode+'">'+playerInnerHTML+'</div>';
+    return '<div id="player" class="'+this.mode+'">'+playerInnerHTML+'</div>';
 
   }
 
@@ -300,7 +263,7 @@ class EdiromAudioPlayer extends HTMLElement {
 
 
   getTracksHTML() {
-    const tracks = JSON.parse(this.getAttribute('set-tracks'));
+    const tracks = JSON.parse(this.tracks);
 
     const tracksHTML = tracks.map((track, idx) => `<div class="track-button track-toggler" data-trackidx="${idx}">
       <div class="track-title">${track.title}</div>
@@ -311,38 +274,105 @@ class EdiromAudioPlayer extends HTMLElement {
     return '<div id="tracks">'+tracksHTML+'</div>';
   }
 
-  playTrack(i){
-    const tracks =JSON.parse(this.tracks);
-    const nextTrack = tracks[i];
+
+   /**
+   * Add methods for handling interaction with the audio player
+   */
+  
+  set(property, newPropertyValue){
+
+    // set internal and html properties  
+    this[property] = newPropertyValue;
+    this.setAttribute('get-'+property, newPropertyValue);
+
+    // get necessary objects
+    const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
     const source = this.shadowRoot.querySelector('source');
-    source.src = nextTrack.src;
-    source.type = nextTrack.type;
-
-    const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
-    audioPlayer.load();
-    this.setState('play');
-  }
-
-
-  setState(state) {
-    const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
+    const tracks =JSON.parse(this.tracks);
+    const nextTrack = tracks[newPropertyValue];
     const playButton = this.shadowRoot.querySelector('#playButton');
 
-    this.state = state;
-    this.setAttribute('get-state', state);
 
-    if (state === 'play') {
-      audioPlayer.play();
-      playButton.innerHTML = this.getSVG('pause');
-      playButton.setAttribute('title', 'pause');
-    } else if(state === 'pause') {
-      audioPlayer.pause();
-      playButton.innerHTML = this.getSVG('play');
-      playButton.setAttribute('title', 'play');
-    } else {
-      console.log("Invalid state: '"+state+"'");
+    switch(property) {
+      
+
+      // handle track setting
+      case 'track':
+
+        // get necessary objects
+
+        // set info at source element
+        source.src = nextTrack.src;
+        source.type = nextTrack.type;
+
+        // handle audio player state
+        audioPlayer.load();
+        this.set('state', 'play');
+        break;
+
+
+      // handle state setting
+      case 'state':
+
+        // get necessary objects
+
+        // handle audio player state
+        if (newPropertyValue === 'play') {
+          audioPlayer.play();
+          playButton.innerHTML = this.getSVG('pause');
+          playButton.setAttribute('title', 'pause');
+        } else if(newPropertyValue === 'pause') {
+          audioPlayer.pause();
+          playButton.innerHTML = this.getSVG('play');
+          playButton.setAttribute('title', 'play');
+        } else {
+          console.log("Invalid state: '"+newPropertyValue+"'");
+        }
+        break;  
+
+      // handle time setting
+      case 'time':        
+        audioPlayer.currentTime = newPropertyValue;
+        break;
+
+      // handle end setting 
+      case 'end':
+
+        break;
+
+      // handle playbackrate setting
+      case 'playbackrate':
+        audioPlayer.playbackRate = newPropertyValue;
+        break;
+
+      // handle mode setting
+      case 'mode':
+        this.connectedCallback();
+        break;
+
+      // handle height setting
+      case 'height':
+        this.shadowRoot.querySelector('#player').style.height = newPropertyValue;
+        break;
+
+      // handle width setting
+      case 'width':
+        this.shadowRoot.querySelector('#player').style.width = newPropertyValue;
+        break;  
+
+      // handle tracks setting
+      case 'tracks':
+        this.connectedCallback();
+        break;
+
+      // handle default
+      default:  
+        console.log("Invalid property: '"+property+"'");
+
     }
+
   }
+
 
 
   /**
@@ -354,15 +384,14 @@ class EdiromAudioPlayer extends HTMLElement {
     const progressSlider = this.shadowRoot.querySelector('#progressSlider');
     const currentTimeDisplay = this.shadowRoot.querySelector('#currentTime');
     const totalTimeDisplay = this.shadowRoot.querySelector('#totalTime');
-
     
 
     /** Event listener for play/pause button */
     this.shadowRoot.querySelector('#playButton').addEventListener('click', () => {
-      const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
-      return audioPlayer.paused ? this.setState('play') : this.setState('pause');
+      return audioPlayer.paused ? this.set('state', 'play') : this.set('state', 'pause');
     });
     
+
     /** 
      * Event listener for prev/next buttons.
      * It listens to all elements with class .track-toggler and reads the data-trackstep attribute to get an info how many tracks
@@ -371,25 +400,22 @@ class EdiromAudioPlayer extends HTMLElement {
     this.shadowRoot.querySelectorAll('.track-toggler').forEach(button => {
       button.addEventListener('click', (evt) => {
 
+        const tracksJSON = JSON.parse(this.tracks);
         const trackStep = evt.currentTarget.dataset.trackstep;
         const trackIdx = evt.currentTarget.dataset.trackidx;
-        const tracks = JSON.parse(this.getAttribute('tracks'));
   
-        var nextTrackIndex = !!trackIdx ? trackIdx : (parseInt(this.getAttribute('set-track')) + parseInt(trackStep));
+        var nextTrackIndex = !!trackIdx ? trackIdx : (parseInt(this.track) + parseInt(trackStep));
 
-        if(nextTrackIndex < 0) { nextTrackIndex = tracks.length - 1 }
-        if(nextTrackIndex >= tracks.length) { nextTrackIndex = 0 }
+        if(nextTrackIndex < 0) { nextTrackIndex = tracksJSON.length - 1 }
+        if(nextTrackIndex >= tracksJSON.length) { nextTrackIndex = 0 }
         
-        this.setAttribute('get-track', nextTrackIndex);
-        this.playTrack(nextTrackIndex);
-      
+        this.set('track', nextTrackIndex);      
       });
 
     });
 
     /** Event listener for tracking time update of audio player */
     audioPlayer.addEventListener("timeupdate", () => {
-      this.setAttribute("get-time", this.shadowRoot.querySelector('#audioPlayer').currentTime);
 
       const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
       progressSlider.value = progress;
