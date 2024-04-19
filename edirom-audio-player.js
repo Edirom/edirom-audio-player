@@ -417,6 +417,11 @@ class EdiromAudioPlayer extends HTMLElement {
     /** Event listener for tracking time update of audio player */
     audioPlayer.addEventListener("timeupdate", () => {
 
+      // update internal and external time information
+      this.time = audioPlayer.currentTime;
+      this.setAttribute('get-time', audioPlayer.currentTime);
+
+      // update progress slider
       const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
       progressSlider.value = progress;
   
