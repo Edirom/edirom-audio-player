@@ -76,24 +76,11 @@ class EdiromAudioPlayer extends HTMLElement {
           color: rgba(0, 0, 0, 0.87);
           border: none;
           border-radius: 4px;
-          background-color: #e0e0e0;
+          background-color: #e6e6e6;
           transition: background-color 0.3s;
           position: relative;
-          padding-left: 40px;
         }
-        .track-button::before {
-          content: url("data:image/svg+xml,${encodeURIComponent(this.getSVG('play'))}");
-          position: absolute;
-          left: 10px; 
-          top: 20px;
-          transform: translateY(-50%);
-          width: 24px; 
-          height: 24px; 
-          background-image: url('');
-          background-size: contain;
-          background-repeat: no-repeat;
-        }
-        .track-button:hover {
+        .track-button:hover, .track-button.current {
           background-color: #d5d5d5;
         }
         .track-button:active {
@@ -122,7 +109,7 @@ class EdiromAudioPlayer extends HTMLElement {
     `;
   }
 
-  getSVG(iconName){
+  svg(iconName){
 
     /* Icon source: https://fonts.google.com/icons?icon.query=play */
 
@@ -239,7 +226,7 @@ class EdiromAudioPlayer extends HTMLElement {
       }
 
       // Add SVG to button
-      buttonElem.innerHTML = this.getSVG(button);
+      buttonElem.innerHTML = this.svg(button);
 
       // Append button to controlsDiv
       controlsDiv.appendChild(buttonElem);
@@ -265,7 +252,7 @@ class EdiromAudioPlayer extends HTMLElement {
   getTracksHTML() {
     const tracks = JSON.parse(this.tracks);
 
-    const tracksHTML = tracks.map((track, idx) => `<div class="track-button track-toggler" data-trackidx="${idx}">
+    const tracksHTML = tracks.map((track, idx) => `<div class="track-button track-toggler${idx == this.track ? ' current' : ''}" data-trackidx="${idx}">
       <div class="track-title">${track.title}</div>
       <div class="track-subtitle">${track.composer} - ${track.work}</div>
     </div>
@@ -287,9 +274,6 @@ class EdiromAudioPlayer extends HTMLElement {
 
     // get necessary objects
     const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
-    const source = this.shadowRoot.querySelector('source');
-    const tracks =JSON.parse(this.tracks);
-    const nextTrack = tracks[newPropertyValue];
     const playButton = this.shadowRoot.querySelector('#playButton');
 
 
@@ -299,11 +283,16 @@ class EdiromAudioPlayer extends HTMLElement {
       // handle track setting
       case 'track':
 
-        // get necessary objects
-
         // set info at source element
+        const tracks =JSON.parse(this.tracks);
+        const nextTrack = tracks[newPropertyValue];
+        const source = this.shadowRoot.querySelector('source');
         source.src = nextTrack.src;
         source.type = nextTrack.type;
+
+        // mark active track
+        this.shadowRoot.querySelectorAll(".track-button").forEach((e) => { e.classList.remove('current'); });
+        this.shadowRoot.querySelector('.track-button[data-trackidx="'+this.track+'"]').classList.add('current');
 
         // handle audio player state
         audioPlayer.load();
@@ -314,16 +303,14 @@ class EdiromAudioPlayer extends HTMLElement {
       // handle state setting
       case 'state':
 
-        // get necessary objects
-
         // handle audio player state
         if (newPropertyValue === 'play') {
           audioPlayer.play();
-          playButton.innerHTML = this.getSVG('pause');
+          playButton.innerHTML = this.svg('pause');
           playButton.setAttribute('title', 'pause');
         } else if(newPropertyValue === 'pause') {
           audioPlayer.pause();
-          playButton.innerHTML = this.getSVG('play');
+          playButton.innerHTML = this.svg('play');
           playButton.setAttribute('title', 'play');
         } else {
           console.log("Invalid state: '"+newPropertyValue+"'");
@@ -422,6 +409,7 @@ class EdiromAudioPlayer extends HTMLElement {
       this.setAttribute('get-time', audioPlayer.currentTime);
 
       // update progress slider
+      if(!progressSlider) return;
       const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
       progressSlider.value = progress;
   
@@ -432,10 +420,11 @@ class EdiromAudioPlayer extends HTMLElement {
       const totalMinutes = Math.floor(audioPlayer.duration / 60);
       const totalSeconds = Math.floor(audioPlayer.duration % 60);
       totalTimeDisplay.textContent = `${totalMinutes}:${totalSeconds < 10 ? '0' : ''}${totalSeconds}`;
+
     });
 
     /** Event listener for tracking progress slider */
-    progressSlider.addEventListener('input', (event) => {
+    this.shadowRoot.querySelector('#progressSlider').addEventListener('input', (event) => {
       audioPlayer.currentTime = (event.target.value / 100) * audioPlayer.duration;
     });
 
