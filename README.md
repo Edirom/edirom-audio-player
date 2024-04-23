@@ -1,6 +1,6 @@
 # Edirom Audio Player Web Component
 
-This web component implements an audio player based on the HTML5 audio facility. It is intended to be used in tbe Edirom Online, but can also be (re-)used in other web applications. No compilation or building is necessary to use the web component. There are no depencies as it is based on plain JavaScript.
+This web component implements an audio player based on the HTML5 audio facility. It is intended to be used in tbe Edirom Online, but can also be (re-)used in other web applications. No compilation or building is necessary to use the web component. There are no dependencies as it is based on plain JavaScript.
 
 As this repository only contains the bare JavaScript-based component, there is a separate demo suite for web components developed in the Edirom Online Reloaded project, where the component can be seen and tested: https://github.com/Edirom/edirom-web-components-demonstrator
 
@@ -11,7 +11,7 @@ As this repository only contains the bare JavaScript-based component, there is a
 ```html
 <script src="path/to/edirom-audio-player.js"></script>
 ```
-3. Include a custom element (this is specified and can be processed by the component) into the `<body>` of the HTML page. The values of attributes prefixed with set-* are used as parameters to at initialization of the component and changing them (programmatically) can control the components state and behaviour during runtime. The values of attributes prefixed with get-* represent the current state of the component and changes to them have no effect on the behaviour or state of the component. The separation is esp. necessary to handle frequently populated information like currentTime of the audio player and avoid interference between reading and writing info about the component's state.
+3. Include a custom element (this is specified and can be processed by the component) into the `<body>` of the HTML page. The values of attributes prefixed with `set-*` are used as parameters to at initialization of the component and changing them (programmatically) can control the components state and behaviour during runtime. The values of attributes prefixed with `get-*` represent the current state of the component and changes to them have no effect on the behaviour or state of the component. The separation is esp. necessary to handle frequently populated information like currentTime of the audio player and avoid interference between reading and writing info about the component's state.
 ```html
 <edirom-audio-player
   set-tracks='[{"title": "Title 1", "composer": "Composer 1", "work": "Work 1", "src": "https://example.com/sound.mp3", "type": "audio/mpeg"}, ... more tracks ... ]' get-tracks=""
