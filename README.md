@@ -41,4 +41,4 @@ _Note: Apparently all attribute values are strings internally, the data type inf
 | --- | --- | ---  | --- |
 | height                 | string | height of player in pixels (px) or percent (%) | 500px |
 | width                  | string | width of player in pixels (px) or percent (%) | 500px |
-| mode | string | preference for displaying "controls-(sm|md|lg)" and/or "tracks-(sm|md|lg)" | controls-md |
+| mode | string | preference for displaying "controls-(sm\|md\|lg)" and/or "tracks-(sm\|md\|lg)" | controls-md |
