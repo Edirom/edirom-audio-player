@@ -1,3 +1,5 @@
+![GitHub License](https://img.shields.io/github/license/Edirom/edirom-audio-player)
+
 # Edirom Audio Player Web Component
 
 This web component implements an audio player based on the HTML5 audio facility. It is intended to be used in tbe Edirom Online, but can also be (re-)used in other web applications. No compilation or building is necessary to use the web component. There are no dependencies as it is based on plain JavaScript.
