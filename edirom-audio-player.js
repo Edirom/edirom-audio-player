@@ -302,7 +302,7 @@ class EdiromAudioPlayer extends HTMLElement {
           playButton.innerHTML = this.svg('play');
           playButton.setAttribute('title', 'play');
         } else {
-          console.log("Invalid state: '"+newPropertyValue+"'");
+          console.log("Invalid audio player state property: '"+newPropertyValue+"'");
         }
         break;  
 
@@ -333,7 +333,7 @@ class EdiromAudioPlayer extends HTMLElement {
 
       // handle width setting
       case 'width':
-        playerDiv.querySelector('#player').style.width = newPropertyValue;
+        playerDiv.style.width = newPropertyValue;
         break;  
 
       // handle tracks setting
