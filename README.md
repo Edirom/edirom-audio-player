@@ -1,4 +1,5 @@
 ![GitHub License](https://img.shields.io/github/license/Edirom/edirom-audio-player)
+[![GitHub release](https://img.shields.io/github/v/release/Edirom/edirom-audio-player.svg)](https://github.com/Edirom/edirom-audio-player/releases)
 [![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8B%20%20%E2%97%8F%20%20%E2%97%8B-orange)](https://fair-software.eu)
 
 # Edirom Audio Player Web Component
