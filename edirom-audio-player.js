@@ -14,14 +14,14 @@ class EdiromAudioPlayer extends HTMLElement {
 
   // component attributes
   static get observedAttributes() {
-    return ['set-tracks', 'set-height', 'set-width', 'set-state', 'set-track', 'set-time', 'set-end', 'set-playbackrate', 'set-mode'];
+    return ['tracks', 'height', 'width', 'state', 'track', 'time', 'end', 'playbackrate', 'mode'];
   }
 
   // attribute change
   attributeChangedCallback(property, oldValue, newValue) {
 
     // handle property change
-    this.set(property.substring(4), newValue);
+    this.set(property, newValue);
 
   }
 
@@ -42,7 +42,7 @@ class EdiromAudioPlayer extends HTMLElement {
 
     let playerInnerHTML;
 
-    switch(this.mode) { 
+    switch(this.getAttribute('mode')) { 
       case 'controls-sm':
         playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'play', 'next', 'tracksAdd']);
         break;
@@ -65,7 +65,7 @@ class EdiromAudioPlayer extends HTMLElement {
         playerInnerHTML = this.getTracksHTML();
         break;
       default:
-        playerInnerHTML = '<p>Error: Invalid display mode</p>';
+        playerInnerHTML = '<p>Error: Invalid display mode "'+this.mode+'"</p>';
         console.log("Invalid display mode: '"+this.mode+"'");
     }
 
@@ -75,8 +75,8 @@ class EdiromAudioPlayer extends HTMLElement {
 
   getControlsHTML(buttons) {
 
-    const tracks = JSON.parse(this.getAttribute('set-tracks'));
-    const currentTrack = tracks[this.getAttribute('set-track')];
+    const tracks = JSON.parse(this.getAttribute('tracks'));
+    const currentTrack = tracks[this.getAttribute('track')];
     const trackSteps = [ { "replay": "0" }, { "prev": "-1" }, { "next": "+1" } ];
 
     let controlsDiv = document.createElement('div');
@@ -257,7 +257,15 @@ class EdiromAudioPlayer extends HTMLElement {
 
     // set internal and html properties  
     this[property] = newPropertyValue;
-    this.setAttribute('get-'+property, newPropertyValue);
+
+
+    // custom event for property update
+    const event = new CustomEvent('communicate-'+property+'-update', {
+        detail: { [property]: newPropertyValue },
+        bubbles: true
+    });
+    this.dispatchEvent(event);
+    
 
     // get necessary objects and check if available
     const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
@@ -399,7 +407,13 @@ class EdiromAudioPlayer extends HTMLElement {
 
         // update internal and external time information
         this.time = audioPlayer.currentTime;
-        this.setAttribute('get-time', audioPlayer.currentTime);
+
+        // Send update event to host
+        const event = new CustomEvent('communicate-time-update', {
+            detail: { time: audioPlayer.currentTime },
+            bubbles: true
+        });
+        this.dispatchEvent(event);
 
         // update progress slider
         if(!progressSlider) return;
