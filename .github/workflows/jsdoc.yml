@@ -1,0 +1,15 @@
+name: jsdoc
+
+on: push
+
+jobs:
+  verify:
+    name: "jsdoc"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: andstor/jsdoc-action@v1
+        name: Build JSdoc
+        with:
+          source_dir: ./
+          recurse: true
+          output_dir: ./doc
