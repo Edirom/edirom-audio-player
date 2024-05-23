@@ -10,11 +10,15 @@ class EdiromAudioPlayer extends HTMLElement {
   connectedCallback() {
     this.render();    
     this.addEventListeners();
+
+    const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
+    
+    (audioPlayer != null) ? audioPlayer.load() : console.log("Audio player not available");
   }
 
   // component attributes
   static get observedAttributes() {
-    return ['tracks', 'height', 'width', 'state', 'track', 'time', 'end', 'playbackrate', 'mode'];
+    return ['tracks', 'height', 'width', 'state', 'track', 'start', 'end', 'playbackrate', 'playbackmode', 'displaymode'];
   }
 
   // attribute change
@@ -42,16 +46,19 @@ class EdiromAudioPlayer extends HTMLElement {
 
     let playerInnerHTML;
 
-    switch(this.getAttribute('mode')) { 
+    switch(this.displaymode) { 
+      case 'hidden':
+        playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'play', 'next', 'tracksRemove']);
+        break;
       case 'controls-sm':
-        playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'play', 'next', 'tracksAdd']);
+        playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'play', 'next', 'tracksRemove']);
         break;
       case 'controls-md':
-        playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'play', 'next', 'tracksAdd']);
+        playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'play', 'next', 'tracksRemove']);
         playerInnerHTML += this.getTimeHTML();
         break;
       case 'controls-lg':
-        playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'play', 'next', 'tracksAdd']);
+        playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'play', 'next', 'tracksRemove']);
         playerInnerHTML += this.getTimeHTML();
         playerInnerHTML += this.getTracksHTML();
         break;
@@ -65,11 +72,11 @@ class EdiromAudioPlayer extends HTMLElement {
         playerInnerHTML = this.getTracksHTML();
         break;
       default:
-        playerInnerHTML = '<p>Error: Invalid display mode "'+this.mode+'"</p>';
-        console.log("Invalid display mode: '"+this.mode+"'");
+        playerInnerHTML = '<p>Error: Invalid displaymode "'+this.displaymode+'"</p>';
+        console.log("Invalid displaymode: '"+this.displaymode+"'");
     }
 
-    return '<div id="player" class="'+this.mode+'">'+playerInnerHTML+'</div>';
+    return '<div id="player" class="'+this.displaymode+'">'+playerInnerHTML+'</div>';
 
   }
 
@@ -153,6 +160,9 @@ class EdiromAudioPlayer extends HTMLElement {
           height: 100%;
           width: 100%;
           container: player / inline-size;
+        }
+        #player.hidden{
+          display: none;
         }
         #controls {
           display: flex;
@@ -242,7 +252,11 @@ class EdiromAudioPlayer extends HTMLElement {
       "forward" : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M104-240v-480l346 240-346 240Zm407 0v-480l346 240-346 240ZM164-480Zm407 0ZM164-355l181-125-181-125v250Zm407 0 181-125-181-125v250Z"/></svg>',
       "replay" : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-80q-75 0-140.5-28T225-185q-49-49-77-114.5T120-440h60q0 125 87.5 212.5T480-140q125 0 212.5-87.5T780-440q0-125-85-212.5T485-740h-23l73 73-41 42-147-147 147-147 41 41-78 78h23q75 0 140.5 28T735-695q49 49 77 114.5T840-440q0 75-28 140.5T735-185q-49 49-114.5 77T480-80Z"/></svg>',
       "tracksAdd" : '<svg xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 -960 960 960" width="48"><path d="M120-330v-60h300v60H120Zm0-165v-60h470v60H120Zm0-165v-60h470v60H120Zm530 500v-170H480v-60h170v-170h60v170h170v60H710v170h-60Z"/></svg>',
-      "tracksRemove" : '<svg xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 -960 960 960" width="48"><path d="m571-80-43-43 114-113-114-113 43-43 113 114 113-114 43 43-114 113 114 113-43 43-113-114L571-80ZM120-330v-60h300v60H120Zm0-165v-60h470v60H120Zm0-165v-60h470v60H120Z"/></svg>'
+      "tracksRemove" : '<svg xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 -960 960 960" width="48"><path d="m571-80-43-43 114-113-114-113 43-43 113 114 113-114 43 43-114 113 114 113-43 43-113-114L571-80ZM120-330v-60h300v60H120Zm0-165v-60h470v60H120Zm0-165v-60h470v60H120Z"/></svg>',
+      "shuffle" : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M576-160v-60h120L522-393l42-43 176 174v-121h60v223H576Zm-374 0-42-43 538-537H576v-60h224v223h-60v-120L202-160Zm193-363L160-757l43-43 235 234-43 43Z"/></svg>',
+      "repeat" : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M280-80 120-240l160-160 42 44-86 86h464v-160h60v220H236l86 86-42 44Zm-80-450v-220h524l-86-86 42-44 160 160-160 160-42-44 86-86H260v160h-60Z"/></svg>',
+      "repeatOne" : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M460-360v-180h-60v-60h120v240h-60ZM280-80 120-240l160-160 56 58-62 62h406v-160h80v240H274l62 62-56 58Zm-80-440v-240h486l-62-62 56-58 160 160-160 160-56-58 62-62H280v160h-80Z"/></svg>',
+      "endless" : '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e8eaed"><path d="M220-260q-92 0-156-64T0-480q0-92 64-156t156-64q37 0 71 13t61 37l68 62-60 54-62-56q-16-14-36-22t-42-8q-58 0-99 41t-41 99q0 58 41 99t99 41q22 0 42-8t36-22l310-280q27-24 61-37t71-13q92 0 156 64t64 156q0 92-64 156t-156 64q-37 0-71-13t-61-37l-68-62 60-54 62 56q16 14 36 22t42 8q58 0 99-41t41-99q0-58-41-99t-99-41q-22 0-42 8t-36 22L352-310q-27 24-61 37t-71 13Z"/></svg>'
     }
 
     return icons[iconName];
@@ -272,8 +286,8 @@ class EdiromAudioPlayer extends HTMLElement {
     const playerDiv = this.shadowRoot.querySelector('#player');
     const playButton = this.shadowRoot.querySelector('#playButton');
     const source = this.shadowRoot.querySelector('source');
-    if(audioPlayer === null || playerDiv === null || playButton === null || source === null )
-      return;
+    //if(audioPlayer === null || playerDiv === null || playButton === null || source === null )
+    //  return;
 
     // handle property change
     switch(property) {
@@ -284,15 +298,21 @@ class EdiromAudioPlayer extends HTMLElement {
         // set info at source element
         const tracks =JSON.parse(this.tracks);
         const nextTrack = tracks[newPropertyValue];
-        source.src = nextTrack.src;
-        source.type = nextTrack.type;
+        if(source != null){
+          source.src = nextTrack.src;
+          source.type = nextTrack.type;
+        }
+    
 
         // mark active track, if exists in DOM, therefore querySelectorAll() is used
         this.shadowRoot.querySelectorAll(".track-button").forEach((e) => { e.classList.remove('current'); });
         this.shadowRoot.querySelectorAll('.track-button[data-trackidx="'+this.track+'"]').forEach((e) => { e.classList.add('current') });
 
         // handle audio player state
-        audioPlayer.load();
+
+        (audioPlayer != null) ? audioPlayer.load() : console.log("Audio player not available");
+
+        this.set('start', this.start);
         this.set('state', 'play');
         break;
 
@@ -301,22 +321,24 @@ class EdiromAudioPlayer extends HTMLElement {
       case 'state':
 
         // handle audio player state
-        if (newPropertyValue === 'play') {
-          audioPlayer.play();
-          playButton.innerHTML = this.svg('pause');
-          playButton.setAttribute('title', 'pause');
-        } else if(newPropertyValue === 'pause') {
-          audioPlayer.pause();
-          playButton.innerHTML = this.svg('play');
-          playButton.setAttribute('title', 'play');
-        } else {
-          console.log("Invalid audio player state property: '"+newPropertyValue+"'");
-        }
+        if (audioPlayer != null && playButton != null) {
+          if (newPropertyValue === 'play' && audioPlayer != null && playButton != null) {
+            audioPlayer.play();
+            playButton.innerHTML = this.svg('pause');
+            playButton.setAttribute('title', 'pause');
+          } else if(newPropertyValue === 'pause' && audioPlayer != null && playButton != null) {
+            (audioPlayer != null) ? audioPlayer.pause() : console.log("Audio player not available");
+            playButton.innerHTML = this.svg('play');
+            playButton.setAttribute('title', 'play');
+          } else {
+            console.log("Invalid audio player state property: '"+newPropertyValue+"'");
+          }
+        }        
         break;  
 
       // handle time setting
-      case 'time':  
-        audioPlayer.currentTime = newPropertyValue; 
+      case 'start':  
+        (audioPlayer != null) ? audioPlayer.currentTime = newPropertyValue : console.log("Audio player not available"); 
         break;
 
       // handle end setting 
@@ -326,11 +348,17 @@ class EdiromAudioPlayer extends HTMLElement {
 
       // handle playbackrate setting
       case 'playbackrate':
-        audioPlayer.playbackRate = newPropertyValue; 
+        (audioPlayer != null) ? audioPlayer.playbackRate = newPropertyValue : console.log("Audio player not available"); 
         break;
 
-      // handle mode setting
-      case 'mode':
+      // handle playbackmode setting
+      case 'playbackmode':
+        
+        break;
+
+      // handle displaymode setting
+      case 'displaymode':
+        console.log("Displaymode changed to: '"+newPropertyValue+"'");
         this.connectedCallback();
         break;
 
@@ -395,18 +423,24 @@ class EdiromAudioPlayer extends HTMLElement {
         if(nextTrackIndex < 0) { nextTrackIndex = tracksJSON.length - 1 }
         if(nextTrackIndex >= tracksJSON.length) { nextTrackIndex = 0 }
         
-        this.set('track', nextTrackIndex);      
+        this.set('track', nextTrackIndex);
       });
 
     });
 
-    /** Event listener for tracking time update of audio player */
+    /** Event listeners for audio player */
 
     this.shadowRoot.querySelectorAll('#audioPlayer').forEach(el => {
-      el.addEventListener('timeupdate', (evt) => {
 
-        // update internal and external time information
-        this.time = audioPlayer.currentTime;
+      // Event listener for duration change to update total time display
+      el.addEventListener('durationchange', (evt) => {
+        const totalMinutes = Math.floor(audioPlayer.duration / 60);
+        const totalSeconds = Math.floor(audioPlayer.duration % 60);
+        if(totalTimeDisplay) totalTimeDisplay.textContent = `${totalMinutes}:${totalSeconds < 10 ? '0' : ''}${totalSeconds}`;
+      });
+
+
+      el.addEventListener('timeupdate', (evt) => {
 
         // Send update event to host
         const event = new CustomEvent('communicate-time-update', {
@@ -415,35 +449,76 @@ class EdiromAudioPlayer extends HTMLElement {
         });
         this.dispatchEvent(event);
 
+
+        // update current time display
+        if(currentTimeDisplay){
+          const currentMinutes = Math.floor(audioPlayer.currentTime / 60);
+          const currentSeconds = Math.floor(audioPlayer.currentTime % 60);
+          currentTimeDisplay.textContent = `${currentMinutes}:${currentSeconds < 10 ? '0' : ''}${currentSeconds}`;
+        }
+        
+
         // update progress slider
-        if(!progressSlider) return;
-        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        progressSlider.value = progress;
+        if(progressSlider){
+          const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+          progressSlider.value = progress;
+        }    
     
-        const currentMinutes = Math.floor(audioPlayer.currentTime / 60);
-        const currentSeconds = Math.floor(audioPlayer.currentTime % 60);
-        currentTimeDisplay.textContent = `${currentMinutes}:${currentSeconds < 10 ? '0' : ''}${currentSeconds}`;
-    
-        const totalMinutes = Math.floor(audioPlayer.duration / 60);
-        const totalSeconds = Math.floor(audioPlayer.duration % 60);
-        totalTimeDisplay.textContent = `${totalMinutes}:${totalSeconds < 10 ? '0' : ''}${totalSeconds}`;
+
+        // if audioPlayer is currently playing and end is reached, pause there
+        const end = Number(this.end);
+
+        if(this.state === 'play' && !isNaN(Number(end)) && end > 0 ) {
+          if (audioPlayer.currentTime >= end || audioPlayer.currentTime >= audioPlayer.duration) {
+
+            console.log("End reached; currentTime="+audioPlayer.currentTime+" this.end="+this.end);
+
+            this.set('state', 'pause');
+
+            // and now decide how to proceed
+            switch(this.playbackmode) {
+              case 'off':
+                // do nothing
+                break;
+              case 'repeat':
+                // go to next track and play from start to end
+                let nextButton = this.shadowRoot.querySelector('#nextButton');
+                nextButton.click();
+                break;
+              case 'repeatOne':
+                audioPlayer.currentTime = this.start;
+                audioPlayer.play();
+                break;
+              case 'shuffle':
+                // shuffle tracks
+                let randomTrackIndex = Math.floor(Math.random() * JSON.parse(this.tracks).length);
+                this.set('track', randomTrackIndex);
+                break;
+              default:
+                console.log("Invalid playbackmode: '"+this.playbackmode+"'");
+            }
+          }
+        }
+
+        // handle playbackmodes (shuffle, repeat, repeatOne)
+        
 
       });
     });
 
 
-    /** Event listener for tracking progress slider */
+    /** Event listeners for tracking progress slider */
     this.shadowRoot.querySelectorAll('#progressSlider').forEach(el => {
       el.addEventListener('input', (evt) => {
         audioPlayer.currentTime = (evt.target.value / 100) * audioPlayer.duration;
       });
     });
 
-    this.shadowRoot.querySelectorAll('#tracksButton').forEach(el => {
+    this.shadowRoot.querySelectorAll('#tracksRemoveButton').forEach(el => {
       el.addEventListener('click', (evt) => {
         const tracksDiv = this.shadowRoot.querySelector('#tracks');
-        const tracksButton = this.shadowRoot.querySelector('#tracksButton');
-        tracksButton.innerHTML = tracksDiv.style.display === 'none' ? this.PLAYLISTRMV_SVG : this.PLAYLISTADD_SVG;      
+        const tracksButton = this.shadowRoot.querySelector('#tracksRemoveButton');
+        tracksButton.innerHTML = tracksDiv.style.display === 'none' ? this.svg('tracksRemove') : this.svg('tracksAdd');      
         tracksDiv.style.display = tracksDiv.style.display === 'none' ? 'block' : 'none';
       });
     });
