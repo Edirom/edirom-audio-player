@@ -45,36 +45,9 @@ class EdiromAudioPlayer extends HTMLElement {
   getPlayerHTML() {
 
     let playerInnerHTML;
-
-    switch(this.displaymode) { 
-      case 'hidden':
-        playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'play', 'next', 'tracksRemove']);
-        break;
-      case 'controls-sm':
-        playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'play', 'next', 'tracksRemove']);
-        break;
-      case 'controls-md':
-        playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'play', 'next', 'tracksRemove']);
-        playerInnerHTML += this.getTimeHTML();
-        break;
-      case 'controls-lg':
-        playerInnerHTML = this.getControlsHTML(['replay', 'prev', 'play', 'next', 'tracksRemove']);
-        playerInnerHTML += this.getTimeHTML();
-        playerInnerHTML += this.getTracksHTML();
-        break;
-      case 'tracks-sm':
-        playerInnerHTML = this.getTracksHTML();
-        break;
-      case 'tracks-md':
-        playerInnerHTML = this.getTracksHTML();
-        break;
-      case 'tracks-lg':
-        playerInnerHTML = this.getTracksHTML();
-        break;
-      default:
-        playerInnerHTML = '<p>Error: Invalid displaymode "'+this.displaymode+'"</p>';
-        console.log("Invalid displaymode: '"+this.displaymode+"'");
-    }
+    playerInnerHTML = this.getControlsHTML(['prev', 'play', 'next', 'tracksRemove']);
+    playerInnerHTML += this.getTimeHTML();
+    playerInnerHTML += this.getTracksHTML();
 
     return '<div id="player" class="'+this.displaymode+'">'+playerInnerHTML+'</div>';
 
@@ -358,8 +331,46 @@ class EdiromAudioPlayer extends HTMLElement {
 
       // handle displaymode setting
       case 'displaymode':
-        console.log("Displaymode changed to: '"+newPropertyValue+"'");
-        this.connectedCallback();
+
+        const tracksDiv = this.shadowRoot.querySelector('#tracks');
+        const sliderDiv = this.shadowRoot.querySelector('#timeInfo');
+        const tracksButton = this.shadowRoot.querySelector('#tracksRemoveButton');
+        
+        
+        switch(this.displaymode) { 
+          case 'hidden':
+            
+            break;
+          case 'controls-sm':
+            tracksDiv.style.display = 'none';
+            sliderDiv.style.display = 'none';
+            tracksButton.innerHTML = this.svg('tracksAdd');    
+        
+            break;
+          case 'controls-md':
+            tracksDiv.style.display = 'none';
+            sliderDiv.style.display = 'block';
+            tracksButton.innerHTML = this.svg('tracksAdd');           
+            break;
+          case 'controls-lg':
+            tracksDiv.style.display = 'block';
+            sliderDiv.style.display = 'block'; 
+            tracksButton.innerHTML = this.svg('tracksRemove');  
+            break;
+          case 'tracks-sm':
+            
+            break;
+          case 'tracks-md':
+            
+            break;
+          case 'tracks-lg':
+            
+            break;
+          default:
+            
+            console.log("Invalid displaymode: '"+this.displaymode+"'");
+        }
+        
         break;
 
       // handle height setting
