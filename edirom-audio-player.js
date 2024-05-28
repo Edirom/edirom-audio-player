@@ -482,8 +482,6 @@ class EdiromAudioPlayer extends HTMLElement {
         if(this.state === 'play' && !isNaN(Number(end)) && end > 0 ) {
           if (audioPlayer.currentTime >= end || audioPlayer.currentTime >= audioPlayer.duration) {
 
-            console.log("End reached; currentTime="+audioPlayer.currentTime+" this.end="+this.end);
-
             this.set('state', 'pause');
 
             // and now decide how to proceed
