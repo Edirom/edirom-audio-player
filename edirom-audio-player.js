@@ -19,8 +19,6 @@ class EdiromAudioPlayer extends HTMLElement {
     this.playbackmode = this.getAttribute('playbackmode') || 'all';
     this.displaymode = this.getAttribute('displaymode') || 'controls-lg';
 
-    // set internal properties
-
 
     //Define a FontFace
     const font = new FontFace("Material Symbols Outlined", "url(https://fonts.gstatic.com/s/materialsymbolsoutlined/v192/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHOej.woff2)", {
@@ -54,8 +52,19 @@ class EdiromAudioPlayer extends HTMLElement {
      
         ${this.getCSS()}
      
-        <div id="content"></div>
         `;
+        
+        // add content div
+        const contentDiv = document.createElement('div');
+        contentDiv.id = 'content';
+        this.shadowRoot.appendChild(contentDiv);
+
+        // attach player html
+        contentDiv.innerHTML = this.getPlayerHTML();
+
+        // add event listeners
+        this.addEventListeners();
+
       }).catch((error)=>{});   
 
   }
@@ -68,18 +77,20 @@ class EdiromAudioPlayer extends HTMLElement {
   
   // Invoked when the custom element is connected from the document's DOM.
   connectedCallback() {
-    console.log("Called: connectedCallback()");
 
-    // overwrite content
-    this.shadowRoot.querySelector('#content').innerHTML = this.getPlayerHTML();
+    // get necessary objects
+    const contentDiv = this.shadowRoot.querySelector('#content');
+    const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
+
+
+    // overwrite content if content div is ready
+    if(!contentDiv === null){
+      contentDiv.innerHTML = this.getPlayerHTML();
+    }
 
     // set event listeners again
     this.addEventListeners();
 
-    
-    const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
-    
-    (audioPlayer != null) ? audioPlayer.load() : console.log("Audio player not available");
   }
 
 
@@ -135,7 +146,8 @@ class EdiromAudioPlayer extends HTMLElement {
 
   getControlsHTML(buttons) {
 
-    const currentTrack = this.tracks[this.track];
+    const tracks = JSON.parse(this.tracks);
+    const currentTrack = tracks[this.track];
     const trackSteps = [ { "replay": "0" }, { "skip_previous": "-1" }, { "skip_next": "+1" } ];
 
     let controlsDiv = document.createElement('div');
@@ -379,17 +391,20 @@ class EdiromAudioPlayer extends HTMLElement {
             
             break;
           case 'controls-sm':
+            if(tracksDiv === null) return;
             tracksDiv.style.display = 'none';
             sliderDiv.style.display = 'none';
             tracksButton.innerHTML = '<span class="mso">playlist_add</span>';    
         
             break;
           case 'controls-md':
+            if(tracksDiv === null) return;
             tracksDiv.style.display = 'none';
             sliderDiv.style.display = 'block';
             tracksButton.innerHTML = '<span class="mso">playlist_add</span>';           
             break;
           case 'controls-lg':
+            if(tracksDiv === null) return;
             tracksDiv.style.display = 'block';
             sliderDiv.style.display = 'block'; 
             tracksButton.innerHTML = '<span class="mso">playlist_remove</span>';  
@@ -422,7 +437,10 @@ class EdiromAudioPlayer extends HTMLElement {
 
       // handle tracks setting
       case 'tracks':
-        this.shadowRoot.querySelector('#content').innerHTML = this.getPlayerHTML();
+        // if content div is ready, update it
+        if(!this.shadowRoot.querySelector('#content') === null){
+          this.shadowRoot.querySelector('#content').innerHTML = this.getPlayerHTML();
+        }        
         break;
 
       // handle default
