@@ -25,7 +25,7 @@ As this repository only contains the bare JavaScript-based component, there is a
   height="500px"
   width="500px"
   state="pause"
-  start="0.0""
+  start="0.0"
   end="10.0"
   playbackrate="1.0"
   playbackmode="all"
