@@ -17,34 +17,39 @@ As this repository only contains the bare JavaScript-based component, there is a
 ```html
 <script src="path/to/edirom-audio-player.js"></script>
 ```
-3. Include a custom element (this is specified and can be processed by the component) into the `<body>` of the HTML page. The values of attributes prefixed with `set-*` are used as parameters to at initialization of the component and changing them (programmatically) can control the components state and behaviour during runtime. The values of attributes prefixed with `get-*` represent the current state of the component and changes to them have no effect on the behaviour or state of the component. The separation is esp. necessary to handle frequently populated information like currentTime of the audio player and avoid interference between reading and writing info about the component's state.
+3. Include a custom element (this is specified and can be processed by the component) into the `<body>` of the HTML page. The attributes of the custom element are used as parameters at initialization of the component and changing them (manually or programmatically) can control the components state and behaviour during runtime. The state changes of the web component are communicated outwards via custom events (called 'communicate-{change-type}-update'). The component/document that instantiates the web component (its parent) can listen (via event listeners which have to be implemented individually) and react to the communicated state changes if necessary. The separation of inward communication (via custom element's attributes) and outward communication (via custom events) is esp. necessary to handle frequently populated information like currentTime of the audio player and avoid interference between reading and writing info about the component's state.
 ```html
+['track', 'tracks', 'height', 'width', 'state', 'start', 'end', 'playbackrate', 'playbackmode', 'displaymode'];
 <edirom-audio-player
-  set-tracks='[{"title": "Title 1", "composer": "Composer 1", "work": "Work 1", "src": "https://example.com/sound.mp3", "type": "audio/mpeg"}, ... more tracks ... ]' get-tracks=""
-  set-height="500px" get-height=""
-  set-width="500px" get-width=""
-  set-state="pause" get-state=""
-  set-track="0" get-track=""
-  set-time="0.0" get-time=""
-  set-end="" get-end=""
-  set-playbackrate="1.0" get-playbackrate=""
-  set-mode="controls-md" get-mode="">
+  track="0"
+  tracks='[{"title": "Title 1", "composer": "Composer 1", "work": "Work 1", "src": "https://example.com/sound.mp3", "type": "audio/mpeg"}, ... more tracks ... ]'
+  height="500px"
+  width="500px"
+  state="pause"
+  start="0.0""
+  end="10.0"
+  playbackrate="1.0"
+  playbackmode="all"
+  display-mode="controls-md">
 </edirom-audio-player>
 ```
+**N.B.: end and playbackmode are not yet implemented**  
+
 ### Parameters
 
-_Note: Apparently all attribute values are strings internally, the data type information below indicates the necessary format of the attribute value. The names of the parameters do not contain the `set-` prefix here, which is mandatory in the custom HTML element._
+_Note: All attribute values are strings internally, the data type information below indicates the necessary format of the attribute value._
 
 | Parameter | Data type | Description | default |
 |---------------|---|---|---|
-| **tracks**                 | json | array of tracks: `[{"title": "Track 1", "composer": "Composer 1", "work": "Work 1", "src": "path_to_audio_file_1.mp3", "type": "audio/mpeg"}, ... ]` | |
-| --- | --- | ---  | --- |
-| state | string | state of audio player (play, pause)  | pause |
-| track       | integer | pointer to current track (also used on startup to play track with supplied index number in json array) | 0 |
-| time        | double | pointer to current timepoint in player (also used for initial startup position)  | 0.0 |
-| end       | integer  | pointer to time when the playback should be stopped automatically  |   |
+| tracks       | json | array of tracks: `[{"title": "Track 1", "composer": "Composer 1", "work": "Work 1", "src": "path_to_audio_file_1.mp3", "type": "audio/mpeg"}, ... ]` | |
+|---------------|---|---|---|
+| track        | integer | pointer to current track (also used on startup to play track with supplied index number in json array) | 0 |
+| state        | string | state of audio player (play, pause)  | pause |
+| time         | double | pointer to current timepoint in player (also used for initial startup position)  | 0.0 |
+| end          | integer  | pointer to time when the playback should be stopped automatically  |   |
 | playbackrate | double | speed of playback | 1.0 |
+| playbackmode | string | mode of playback (repeat-one, repeat-all, shuffle) | repeat-all |
 | --- | --- | ---  | --- |
 | height                 | string | height of player in pixels (px) or percent (%) | 500px |
 | width                  | string | width of player in pixels (px) or percent (%) | 500px |
-| mode | string | preference for displaying "controls-(sm\|md\|lg)" and/or "tracks-(sm\|md\|lg)" | controls-md |
+| display-mode | string | preference for displaying "controls-(sm\|md\|lg)" and/or "tracks-(sm\|md\|lg)" | controls-md |
