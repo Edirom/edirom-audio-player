@@ -1,13 +1,21 @@
+/**
+ * Represents the EdiromAudioPlayer custom element.
+ * @class
+ * @extends HTMLElement
+ */
 class EdiromAudioPlayer extends HTMLElement {
 
+  /**
+   * Creates an instance of EdiromAudioPlayer.
+   * @constructor
+   */
   constructor() {
     super();
 
-    // shadow root
+    /** attach shadow root with mode "open" */
     this.attachShadow({ mode: 'open' });
 
-
-    // set properties
+    /** set global properties */
     this.track = this.getAttribute('track') || 0;
     this.tracks = this.getAttribute('tracks') || '[]';
     this.height = this.getAttribute('height') || '100%';
@@ -19,19 +27,18 @@ class EdiromAudioPlayer extends HTMLElement {
     this.playbackmode = this.getAttribute('playbackmode') || 'all';
     this.displaymode = this.getAttribute('displaymode') || 'controls-lg';
 
-
     //Define a FontFace
     const font = new FontFace("Material Symbols Outlined", "url(https://fonts.gstatic.com/s/materialsymbolsoutlined/v192/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHOej.woff2)", {
       style: "normal",
       weight: "100 700"
     });
-    
+
     // wait for font 
-    font.load().then( (loaded_face)=> {
-        document.fonts.add(loaded_face)
-        
-        // append content
-        this.shadowRoot.innerHTML += `
+    font.load().then((loaded_face) => {
+      document.fonts.add(loaded_face)
+
+      // append content
+      this.shadowRoot.innerHTML += `
         <style>
             .mso {
                 font-family: 'Material Symbols Outlined';
@@ -49,42 +56,48 @@ class EdiromAudioPlayer extends HTMLElement {
                 -moz-osx-font-smoothing: grayscale;
             }
         </style>
-     
+
         ${this.getCSS()}
-     
+
         `;
-        
-        // add content div
-        const contentDiv = document.createElement('div');
-        contentDiv.id = 'content';
-        this.shadowRoot.appendChild(contentDiv);
 
-        // attach player html
-        contentDiv.innerHTML = this.getPlayerHTML();
+      // add content div
+      const contentDiv = document.createElement('div');
+      contentDiv.id = 'content';
+      this.shadowRoot.appendChild(contentDiv);
 
-        // add event listeners
-        this.addEventListeners();
+      // attach player html
+      contentDiv.innerHTML = this.getPlayerHTML();
 
-      }).catch((error)=>{});   
+      // add event listeners
+      this.addEventListeners();
+
+    }).catch((error) => { });
 
   }
 
-  // component attributes
+  
+  /**
+   * Returns the list of observed attributes for the EdiromAudioPlayer custom element.
+   * @static
+   * @returns {Array<string>} The list of observed attributes.
+   */
   static get observedAttributes() {
     return ['track', 'tracks', 'height', 'width', 'state', 'start', 'end', 'playbackrate', 'playbackmode', 'displaymode'];
   }
 
-  
-  // Invoked when the custom element is connected from the document's DOM.
+
+  /**
+   * Invoked when the custom element is connected from the document's DOM.
+   */
   connectedCallback() {
 
     // get necessary objects
     const contentDiv = this.shadowRoot.querySelector('#content');
     const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
 
-
     // overwrite content if content div is ready
-    if(!contentDiv === null){
+    if (!contentDiv === null) {
       contentDiv.innerHTML = this.getPlayerHTML();
     }
 
@@ -94,15 +107,24 @@ class EdiromAudioPlayer extends HTMLElement {
   }
 
 
-  // Invoked when the custom element is disconnected from the document's DOM.
-  disconnectedCallback() {  }
+  /**
+   * Invoked when the custom element is disconnected from the document's DOM.
+   */
+  disconnectedCallback() { }
 
 
-  // Invoked when the custom element is moved to a new document.
-  adoptedCallback() {  }
+  /**
+   * Invoked when the custom element is moved to a new document.
+   */
+  adoptedCallback() { }
 
-  
-  // Invoked when one of the custom element's attributes is added, removed, or changed.
+
+  /**
+   * Invoked when one of the custom element's attributes is added, removed, or changed.
+   * @param {string} property - The name of the attribute that was changed.
+   * @param {*} oldValue - The previous value of the attribute.
+   * @param {*} newValue - The new value of the attribute.
+   */
   attributeChangedCallback(property, oldValue, newValue) {
 
     // handle property change
@@ -111,16 +133,20 @@ class EdiromAudioPlayer extends HTMLElement {
   }
 
 
-  // setting of property
-  set(property, newPropertyValue){
+  /**
+   * Sets the value of a global property and triggers property update events.
+   * @param {string} property - The name of the property to set.
+   * @param {*} newPropertyValue - The new value to set for the property.
+   */
+  set(property, newPropertyValue) {
 
     // set internal and html properties  
     this[property] = newPropertyValue;
 
     // custom event for property update
-    const event = new CustomEvent('communicate-'+property+'-update', {
-        detail: { [property]: newPropertyValue },
-        bubbles: true
+    const event = new CustomEvent('communicate-' + property + '-update', {
+      detail: { [property]: newPropertyValue },
+      bubbles: true
     });
     this.dispatchEvent(event);
 
@@ -129,10 +155,10 @@ class EdiromAudioPlayer extends HTMLElement {
 
   }
 
-   /**
-   * Add methods for HTML generation
+  /**
+   * Returns the HTML content for the player.
+   * @returns {string} The HTML content for the player.
    */
-
   getPlayerHTML() {
 
     let playerInnerHTML;
@@ -140,19 +166,24 @@ class EdiromAudioPlayer extends HTMLElement {
     playerInnerHTML += this.getTimeHTML();
     playerInnerHTML += this.getTracksHTML();
 
-    return '<div id="player" class="'+this.displaymode+'">'+playerInnerHTML+'</div>';
+    return '<div id="player" class="' + this.displaymode + '">' + playerInnerHTML + '</div>';
 
   }
 
+  /**
+   * Returns the HTML content for the control buttons.
+   * @param {Array<string>} buttons - The list of button names.
+   * @returns {string} The HTML content for the control buttons.
+   */
   getControlsHTML(buttons) {
 
     const tracks = JSON.parse(this.tracks);
     const currentTrack = tracks[this.track];
-    const trackSteps = [ { "replay": "0" }, { "skip_previous": "-1" }, { "skip_next": "+1" } ];
+    const trackSteps = [{ "replay": "0" }, { "skip_previous": "-1" }, { "skip_next": "+1" }];
 
     let controlsDiv = document.createElement('div');
     controlsDiv.id = 'controls';
-        
+
     // Create and fill audio element
     let audioElem = document.createElement('audio');
     audioElem.id = 'audioPlayer';
@@ -172,17 +203,17 @@ class EdiromAudioPlayer extends HTMLElement {
     // Create and fill button elements
     buttons.forEach(button => {
       let buttonElem = document.createElement('button');
-      buttonElem.id = button+'Button';
+      buttonElem.id = button + 'Button';
       buttonElem.title = button;
 
       // add class and data-trackstep attribute to buttons to indicate how many tracks should be forwarded or rewinded
-      if(trackSteps.find(step => step[button])){
+      if (trackSteps.find(step => step[button])) {
         buttonElem.classList.add('track-toggler');
         buttonElem.dataset.trackstep = trackSteps.find(step => step[button])[button];
       }
 
       // Add icon to button
-      buttonElem.innerHTML = '<span class="mso">'+button+'</span>';
+      buttonElem.innerHTML = '<span class="mso">' + button + '</span>';
 
       // Append button to controlsDiv
       controlsDiv.appendChild(buttonElem);
@@ -192,6 +223,10 @@ class EdiromAudioPlayer extends HTMLElement {
     return controlsDiv.outerHTML;
   }
 
+  /**
+   * Returns the HTML content for the time information.
+   * @returns {string} The HTML content for the time information.
+   */
   getTimeHTML() {
 
     var timeHTML;
@@ -204,7 +239,10 @@ class EdiromAudioPlayer extends HTMLElement {
     return timeHTML;
   }
 
-
+  /**
+   * Returns the HTML content for the tracks.
+   * @returns {string} The HTML content for the tracks.
+   */
   getTracksHTML() {
     const tracks = JSON.parse(this.tracks);
 
@@ -214,10 +252,14 @@ class EdiromAudioPlayer extends HTMLElement {
     </div>
     `).join('');
 
-    return '<div id="tracks">'+tracksHTML+'</div>';
+    return '<div id="tracks">' + tracksHTML + '</div>';
   }
 
-  getCSS() {  
+  /**
+   * Returns the CSS styles for the player.
+   * @returns {string} The CSS styles for the player.
+   */
+  getCSS() {
     return `
     <style>
         #player {
@@ -298,15 +340,20 @@ class EdiromAudioPlayer extends HTMLElement {
   }
 
 
-   /**
-   * Add methods for handling interaction with the audio player
+
+  /**
+   * Handles property changes for the audio player.
+   * @param {string} property - The name of the property being changed.
+   * @param {any} newPropertyValue - The new value of the property.
    */
   handlePropertyChange(property, newPropertyValue) {
-    
+
     // get necessary objects and check if available
     const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
     const playerDiv = this.shadowRoot.querySelector('#player');
     const playButton = this.shadowRoot.querySelector('#play_arrowButton');
+  
+  
     const source = this.shadowRoot.querySelector('source');
     //if(audioPlayer === null || playerDiv === null || playButton === null || source === null )
     //  return;
@@ -452,9 +499,11 @@ class EdiromAudioPlayer extends HTMLElement {
   }
 
 
-
   /**
-   * Add event listeners to the buttons
+   * Adds event listeners to various elements in the audio player component.
+   * These event listeners handle play/pause button clicks, track toggler clicks,
+   * audio player events (duration change, time update), progress slider input,
+   * and playlist remove button clicks.
    */
   addEventListeners() {
 
@@ -590,4 +639,5 @@ class EdiromAudioPlayer extends HTMLElement {
   }
 }
 
+/** Define the custom element */
 customElements.define('edirom-audio-player', EdiromAudioPlayer);
