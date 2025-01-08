@@ -25,7 +25,8 @@ class EdiromAudioPlayer extends HTMLElement {
     this.end = this.getAttribute('end');
     this.playbackrate = this.getAttribute('playbackrate') || 1;
     this.playbackmode = this.getAttribute('playbackmode') || 'all';
-    this.displaymode = this.getAttribute('displaymode') || 'controls-lg';
+    this.progressbar = this.getAttribute('progressbar') || 'false';
+    this.playlist = this.getAttribute('playlist') || 'false';
 
     //Define a FontFace
     const font = new FontFace("Material Symbols Outlined", "url(https://fonts.gstatic.com/s/materialsymbolsoutlined/v192/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHOej.woff2)", {
@@ -83,7 +84,7 @@ class EdiromAudioPlayer extends HTMLElement {
    * @returns {Array<string>} The list of observed attributes.
    */
   static get observedAttributes() {
-    return ['track', 'tracks', 'height', 'width', 'state', 'start', 'end', 'playbackrate', 'playbackmode', 'displaymode'];
+    return ['track', 'tracks', 'height', 'width', 'state', 'start', 'end', 'playbackrate', 'playbackmode', 'playlist', 'progressbar'];
   }
 
 
@@ -162,9 +163,10 @@ class EdiromAudioPlayer extends HTMLElement {
   getPlayerHTML() {
 
     let playerInnerHTML;
-    playerInnerHTML = this.getControlsHTML(['skip_previous', 'play_arrow', 'skip_next', 'playlist_remove']);
+    playerInnerHTML = this.getControlsHTML(['skip_previous', 'play_arrow', 'skip_next', 'tune']);
     playerInnerHTML += this.getTimeHTML();
     playerInnerHTML += this.getTracksHTML();
+    playerInnerHTML += this.getOverlayHTML();
 
     return '<div id="player" class="' + this.displaymode + '">' + playerInnerHTML + '</div>';
 
@@ -215,6 +217,15 @@ class EdiromAudioPlayer extends HTMLElement {
       // Add icon to button
       buttonElem.innerHTML = '<span class="mso">' + button + '</span>';
 
+      // Add additional classes to buttons
+      switch (button) {
+        case 'tune':
+          buttonElem.classList.add('toggleSettings');
+          break;
+        default:  
+          break;
+      }
+
       // Append button to controlsDiv
       controlsDiv.appendChild(buttonElem);
     });
@@ -256,6 +267,33 @@ class EdiromAudioPlayer extends HTMLElement {
   }
 
   /**
+   * Returns the HTML content for an overlay box that contains settings for changing the audio appearance.
+   * @returns {string} The HTML content for the overlay box.
+   */
+  getOverlayHTML() {
+    let overlayHTML = `
+      <div id="settingsOverlay" class="overlay">
+        <div class="overlay-content">
+          <span class="toggleSettings close-button" onclick="document.getElementById('settingsOverlay').style.display='none'">&times;</span>
+          <div class="setting">
+            <label for="playlist">Playlist</label>
+            <input type="checkbox" id="playlistCheckbox" name="playlistCheckbox" value="showPlaylist">
+          </div>
+          <div class="setting">
+            <label for="progress">Progress bar</label>
+            <input type="checkbox" id="progressCheckbox" name="progressCheckbox" value="showProgress">
+          </div>              
+          <div class="setting">
+            <label for="speed">Playback rate <span id="currentPlaybackrate">1.0</span></label><br/>
+            <input type="range" id="playbackrate-slider" name="playbackrate-slider" min="0.5" max="2" step="0.025" value="1">
+          </div>  
+        </div>
+      </div>
+    `;
+    return overlayHTML;
+  }
+
+  /**
    * Returns the CSS styles for the player.
    * @returns {string} The CSS styles for the player.
    */
@@ -285,7 +323,11 @@ class EdiromAudioPlayer extends HTMLElement {
         #controls #fast_rewindButton {
           display: none;
         }
+        #tracks{
+          display: none;
+        }
         #timeInfo {
+          display: none;
           margin-top: 10px;
         }
         #timeInfo input {
@@ -322,6 +364,31 @@ class EdiromAudioPlayer extends HTMLElement {
           box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
         }
 
+        #settingsOverlay {
+          display: none;
+          position: fixed;
+          width: 220px;
+          padding-bottom: 20px;
+          z-index: 1;
+          background-color: #fff;
+          border: 1px solid #ccc;
+          font-size: .85em;
+          font-family: Helvetica;
+          color: #555;
+          font-weight: bold;
+        }
+
+        #settingsOverlay .close-button {  
+          position: absolute;
+          top: 5px;
+          right: 5px;
+          font-size: 24px;
+          cursor: pointer;
+        }
+
+        #settingsOverlay .setting {
+          margin: 20px 0px 0px 10px;
+        }
         
         /* height-dependent rules */
 
@@ -418,59 +485,34 @@ class EdiromAudioPlayer extends HTMLElement {
       // handle playbackrate setting
       case 'playbackrate':
         (audioPlayer != null) ? audioPlayer.playbackRate = newPropertyValue : console.log("Audio player not available"); 
+        this.shadowRoot.querySelector('#currentPlaybackrate').textContent = newPropertyValue;
+        this.shadowRoot.querySelector('#playbackrate-slider').value = newPropertyValue;
         break;
 
-      // handle playbackmode setting
-      case 'playbackmode':
-        
-        break;
-
-      // handle displaymode setting
-      case 'displaymode':
-
-        const tracksDiv = this.shadowRoot.querySelector('#tracks');
-        const sliderDiv = this.shadowRoot.querySelector('#timeInfo');
-        const tracksButton = this.shadowRoot.querySelector('#playlist_removeButton');
-        
-        
-        switch(this.displaymode) { 
-          case 'hidden':
-            
-            break;
-          case 'controls-sm':
-            if(tracksDiv === null) return;
-            tracksDiv.style.display = 'none';
-            sliderDiv.style.display = 'none';
-            tracksButton.innerHTML = '<span class="mso">playlist_add</span>';    
-        
-            break;
-          case 'controls-md':
-            if(tracksDiv === null) return;
-            tracksDiv.style.display = 'none';
-            sliderDiv.style.display = 'block';
-            tracksButton.innerHTML = '<span class="mso">playlist_add</span>';           
-            break;
-          case 'controls-lg':
-            if(tracksDiv === null) return;
-            tracksDiv.style.display = 'block';
-            sliderDiv.style.display = 'block'; 
-            tracksButton.innerHTML = '<span class="mso">playlist_remove</span>';  
-            break;
-          case 'tracks-sm':
-            
-            break;
-          case 'tracks-md':
-            
-            break;
-          case 'tracks-lg':
-            
-            break;
-          default:
-            
-            console.log("Invalid displaymode: '"+this.displaymode+"'");
+      // handle progressbar setting
+      case 'progressbar':
+        if(this.shadowRoot.querySelector('#timeInfo') != null){
+          if(newPropertyValue == 'true'){
+            this.shadowRoot.querySelector('#timeInfo').style.display = 'block';
+            this.shadowRoot.querySelector('#progressCheckbox').checked = true;
+          } else {
+            this.shadowRoot.querySelector('#timeInfo').style.display = 'none';
+            this.shadowRoot.querySelector('#progressCheckbox').checked = false;
+          }
         }
-        
         break;
+
+      // handle playlist setting
+      case 'playlist':
+        if(this.shadowRoot.querySelector('#tracks') != null){
+          if(newPropertyValue == 'true'){
+            this.shadowRoot.querySelector('#tracks').style.display = 'block';
+            this.shadowRoot.querySelector('#playlistCheckbox').checked = true;
+          } else {
+            this.shadowRoot.querySelector('#tracks').style.display = 'none';
+            this.shadowRoot.querySelector('#playlistCheckbox').checked = false;
+          }
+        }
 
       // handle height setting
       case 'height':
@@ -542,6 +584,25 @@ class EdiromAudioPlayer extends HTMLElement {
       });
 
     });
+
+    /** 
+     * Event listener for settings overlay 
+     * Listens to all elements with class .toggleSettings and toggles the display of the settings overlay
+    */
+    this.shadowRoot.querySelectorAll('.toggleSettings').forEach(el => {
+      el.addEventListener('click', (evt) => {
+        const overlay = this.shadowRoot.querySelector('#settingsOverlay');
+
+        // position overlay at lower right corner of tune button
+        const tuneButton = this.shadowRoot.querySelector('#tuneButton');
+        overlay.style.top = tuneButton.offsetTop + tuneButton.offsetHeight + 'px';
+        overlay.style.left = tuneButton.offsetLeft + 'px';
+        
+        // toggle display
+        overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
+      });
+    });
+
 
     /** Event listeners for audio player */
 
@@ -627,14 +688,30 @@ class EdiromAudioPlayer extends HTMLElement {
       });
     });
 
-    this.shadowRoot.querySelectorAll('#playlist_removeButton').forEach(el => {
-      el.addEventListener('click', (evt) => {
-        const tracksDiv = this.shadowRoot.querySelector('#tracks');
-        const tracksButton = this.shadowRoot.querySelector('#playlist_removeButton');
-        tracksButton.innerHTML = tracksDiv.style.display === 'none' ? '<span class="mso">playlist_remove</span>' : '<span class="mso">playlist_add</span>';      
-        tracksDiv.style.display = tracksDiv.style.display === 'none' ? 'block' : 'none';
+    /** Event listener for playbackrate slider */
+    this.shadowRoot.querySelectorAll('#playbackrate-slider').forEach(el => {
+      el.addEventListener('input', (evt) => {
+        this.set('playbackrate', evt.target.value);
       });
     });
+
+    /** Event listener for playlist checkbox */
+    this.shadowRoot.querySelectorAll('#playlistCheckbox').forEach(el => {
+      el.addEventListener('change', (evt) => {
+        const tracksDiv = this.shadowRoot.querySelector('#tracks');
+        tracksDiv.style.display = evt.target.checked ? 'block' : 'none';
+      });
+    });
+
+    /** Event listener for progress checkbox */
+    this.shadowRoot.querySelectorAll('#progressCheckbox').forEach(el => {
+      el.addEventListener('change', (evt) => {
+        const progressSlider = this.shadowRoot.querySelector('#timeInfo');
+        progressSlider.style.display = evt.target.checked ? 'block' : 'none';
+      });
+    });
+    
+    
 
   }
 }
