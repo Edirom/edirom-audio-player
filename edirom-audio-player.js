@@ -146,7 +146,11 @@ class EdiromAudioPlayer extends HTMLElement {
 
     // custom event for property update
     const event = new CustomEvent('communicate-' + property + '-update', {
-      detail: { [property]: newPropertyValue },
+      detail: { 
+        element: this.tagName.toLowerCase(),
+        property: property,
+        value: newPropertyValue
+      },
       bubbles: true
     });
     this.dispatchEvent(event);
@@ -620,7 +624,11 @@ class EdiromAudioPlayer extends HTMLElement {
 
         // Send update event to host
         const event = new CustomEvent('communicate-time-update', {
-            detail: { time: audioPlayer.currentTime },
+            detail: { 
+              element: this.tagName.toLowerCase(),
+              property: 'time',
+              value: audioPlayer.currentTime
+            },
             bubbles: true
         });
         this.dispatchEvent(event);
