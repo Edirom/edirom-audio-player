@@ -223,8 +223,18 @@ class EdiromAudioPlayer extends HTMLElement {
 
       // Add additional classes to buttons
       switch (button) {
+        case 'play_arrow':
+          buttonElem.title = 'play';
+          break;
+        case 'skip_previous':
+          buttonElem.title = 'previous';
+          break;
+        case 'skip_next':
+          buttonElem.title = 'next';
+          break;
         case 'tune':
           buttonElem.classList.add('toggleSettings');
+          buttonElem.title = 'settings';
           break;
         default:  
           break;
@@ -278,7 +288,7 @@ class EdiromAudioPlayer extends HTMLElement {
     let overlayHTML = `
       <div id="settingsOverlay" class="overlay">
         <div class="overlay-content">
-          <span class="toggleSettings close-button" onclick="document.getElementById('settingsOverlay').style.display='none'">&times;</span>
+          <span class="toggleSettings close-button">&times;</span>
           <div class="setting">
             <label for="playlist">Playlist</label>
             <input type="checkbox" id="playlistCheckbox" name="playlistCheckbox" value="showPlaylist">
@@ -290,7 +300,19 @@ class EdiromAudioPlayer extends HTMLElement {
           <div class="setting">
             <label for="speed">Playback rate <span id="currentPlaybackrate">1.0</span></label><br/>
             <input type="range" id="playbackrate-slider" name="playbackrate-slider" min="0.5" max="2" step="0.025" value="1">
-          </div>  
+          </div>            
+          <div class="setting">
+            <label for="repeatMode">Playback mode</label><br/>
+            <input type="radio" id="repeatModeOff" name="repeatMode" value="off">
+            <label for="repeatModeOff">Off</label>
+            <input type="radio" id="repeatModeOne" name="repeatMode" value="one">
+            <label for="repeatModeOne">Repeat One</label>
+            <br/>
+            <input type="radio" id="repeatModeAll" name="repeatMode" value="all" checked>
+            <label for="repeatModeAll">Repeat All</label>
+            <input type="radio" id="repeatModeShuffle" name="repeatMode" value="shuffle">
+            <label for="repeatModeAll">Shuffle</label>
+          </div>
         </div>
       </div>
     `;
@@ -316,6 +338,7 @@ class EdiromAudioPlayer extends HTMLElement {
           display: flex;
           align-items: center;
           gap: 10px;
+          padding: 10px;
         }
         #controls button {
           display: inline-block;
@@ -327,20 +350,24 @@ class EdiromAudioPlayer extends HTMLElement {
         #controls #fast_rewindButton {
           display: none;
         }
-        #tracks{
-          display: none;
-        }
         #timeInfo {
           display: none;
           margin-top: 10px;
+          padding: 0 10px;
         }
         #timeInfo input {
           min-width: 70%;
+          top: 7px;
+          position: relative;
         }
         #timeInfo span {
           font-size: 0.875rem;
           font-family: 'Roboto', sans-serif;
           text-align: center;
+        }
+        #tracks{
+          display: none;
+          font-family: 'Helvetica', sans-serif;
         }
         .track-button {
           display: block;
@@ -350,24 +377,27 @@ class EdiromAudioPlayer extends HTMLElement {
           font-weight: 500;
           line-height: 1.75;
           letter-spacing: 0.02857em;
-          color: rgba(0, 0, 0, 0.87);
-          border: none;
-          border-radius: 4px;
-          background-color: #e6e6e6;
-          transition: background-color 0.3s;
+          color: #444;
           position: relative;
         }
-        .track-button:hover, .track-button.current {
-          background-color: #d5d5d5;
+        .track-button:hover {
+          color: #111;
+          background-color: #f7f7f7;
+        }
+        .track-button.current {
+          color: #000;
+          background-color: #f5f5f5;
         }
         .track-button:active {
-          background-color: #aaaaaa;
+          color: #222;
         }
         .track-button:focus {
           outline: none;
           box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
         }
-
+        .track-title {
+          font-size: 1rem;
+        }
         #settingsOverlay {
           display: none;
           position: fixed;
@@ -706,16 +736,15 @@ class EdiromAudioPlayer extends HTMLElement {
     /** Event listener for playlist checkbox */
     this.shadowRoot.querySelectorAll('#playlistCheckbox').forEach(el => {
       el.addEventListener('change', (evt) => {
-        const tracksDiv = this.shadowRoot.querySelector('#tracks');
-        tracksDiv.style.display = evt.target.checked ? 'block' : 'none';
+        this.set('playlist', evt.target.checked ? 'true' : 'false');
       });
     });
 
     /** Event listener for progress checkbox */
     this.shadowRoot.querySelectorAll('#progressCheckbox').forEach(el => {
       el.addEventListener('change', (evt) => {
-        const progressSlider = this.shadowRoot.querySelector('#timeInfo');
-        progressSlider.style.display = evt.target.checked ? 'block' : 'none';
+        
+        this.set('progressbar', evt.target.checked ? 'true' : 'false');
       });
     });
     
