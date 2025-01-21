@@ -375,7 +375,7 @@ class EdiromAudioPlayer extends HTMLElement {
           padding: 6px 16px;
           font-size: 0.875rem;
           font-weight: 500;
-          line-height: 1.75;
+          line-height: 1.5;
           letter-spacing: 0.02857em;
           color: #444;
           position: relative;
@@ -405,6 +405,7 @@ class EdiromAudioPlayer extends HTMLElement {
           padding-bottom: 20px;
           z-index: 1;
           background-color: #fff;
+          box-shadow: 1px 1px 1px 1px #aaa;
           border: 1px solid #ccc;
           font-size: .85em;
           font-family: Helvetica;
@@ -626,13 +627,14 @@ class EdiromAudioPlayer extends HTMLElement {
     this.shadowRoot.querySelectorAll('.toggleSettings').forEach(el => {
       el.addEventListener('click', (evt) => {
         const overlay = this.shadowRoot.querySelector('#settingsOverlay');
-
+        
         // position overlay at lower right corner of tune button
         const tuneButton = this.shadowRoot.querySelector('#tuneButton');
         overlay.style.top = tuneButton.offsetTop + tuneButton.offsetHeight + 'px';
         overlay.style.left = tuneButton.offsetLeft + 'px';
         
         // toggle display
+        if (overlay.style.display === '') { overlay.style.display = 'none'; }
         overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
       });
     });
