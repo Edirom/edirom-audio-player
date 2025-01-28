@@ -549,6 +549,11 @@ class EdiromAudioPlayer extends HTMLElement {
           }
         }
 
+      // handle playbackmode setting 
+      case 'playbackmode':
+
+        break;
+
       // handle height setting
       case 'height':
         playerDiv.style.height = newPropertyValue;
