@@ -10,6 +10,7 @@ class EdiromAudioPlayer extends HTMLElement {
    * @constructor
    */
   constructor() {
+
     super();
 
     /** attach shadow root with mode "open" */
@@ -59,15 +60,9 @@ class EdiromAudioPlayer extends HTMLElement {
 
         ${this.getCSS()}
 
+        ${this.getPlayerHTML()}
+
         `;
-
-      // add content div
-      const contentDiv = document.createElement('div');
-      contentDiv.id = 'content';
-      this.shadowRoot.appendChild(contentDiv);
-
-      // attach player html
-      contentDiv.innerHTML = this.getPlayerHTML();
 
       // add event listeners
       this.addEventListeners();
@@ -91,15 +86,6 @@ class EdiromAudioPlayer extends HTMLElement {
    * Invoked when the custom element is connected from the document's DOM.
    */
   connectedCallback() {
-
-    // get necessary objects
-    const contentDiv = this.shadowRoot.querySelector('#content');
-    const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
-
-    // overwrite content if content div is ready
-    if (!contentDiv === null) {
-      contentDiv.innerHTML = this.getPlayerHTML();
-    }
 
     // set event listeners again
     this.addEventListeners();
@@ -166,7 +152,7 @@ class EdiromAudioPlayer extends HTMLElement {
     playerInnerHTML += this.getTimeHTML();
     playerInnerHTML += this.getTracksHTML();
 
-    return '<div id="player" class="' + this.displaymode + '">' + playerInnerHTML + '</div>';
+    return '<div id="player" class="' + this.displaymode + '" style="">' + playerInnerHTML + '</div>';
 
   }
 
@@ -364,25 +350,32 @@ class EdiromAudioPlayer extends HTMLElement {
       // handle track setting
       case 'track':
 
-        // set info at source element
-        const tracks =JSON.parse(this.tracks);
-        const nextTrack = tracks[newPropertyValue];
-        if(source != null){
-          source.src = nextTrack.src;
-          source.type = nextTrack.type;
+        try {
+
+          // set info at source element
+          const tracks =JSON.parse(this.tracks);
+          const nextTrack = tracks[newPropertyValue];
+          if(source != null){
+            source.src = nextTrack.src;
+            source.type = nextTrack.type;
+          }
+      
+
+          // mark active track, if exists in DOM, therefore querySelectorAll() is used
+          this.shadowRoot.querySelectorAll(".track-button").forEach((e) => { e.classList.remove('current'); });
+          this.shadowRoot.querySelectorAll('.track-button[data-trackidx="'+this.track+'"]').forEach((e) => { e.classList.add('current') });
+
+          // handle audio player state
+
+          (audioPlayer != null) ? audioPlayer.load() : console.log("Audio player not available");
+
+          this.set('start', this.start);
+          this.set('state', 'play');
+
+        } catch (error) {
+          console.log("Error setting track: ", error);
         }
-    
 
-        // mark active track, if exists in DOM, therefore querySelectorAll() is used
-        this.shadowRoot.querySelectorAll(".track-button").forEach((e) => { e.classList.remove('current'); });
-        this.shadowRoot.querySelectorAll('.track-button[data-trackidx="'+this.track+'"]').forEach((e) => { e.classList.add('current') });
-
-        // handle audio player state
-
-        (audioPlayer != null) ? audioPlayer.load() : console.log("Audio player not available");
-
-        this.set('start', this.start);
-        this.set('state', 'play');
         break;
 
 
@@ -474,12 +467,20 @@ class EdiromAudioPlayer extends HTMLElement {
 
       // handle height setting
       case 'height':
-        playerDiv.style.height = newPropertyValue;
+        try {
+          playerDiv.style.height = newPropertyValue;
+        } catch (error) {
+          console.log("Warning: playerDiv.style.height could not be set ", error);
+        }
         break;
 
       // handle width setting
       case 'width':
-        playerDiv.style.width = newPropertyValue;
+        try {
+          playerDiv.style.width = newPropertyValue;
+        } catch (error) {
+          console.log("Warning: playerDiv.style.width could not be set ", error);
+        }
         break;  
 
       // handle tracks setting
@@ -637,6 +638,8 @@ class EdiromAudioPlayer extends HTMLElement {
     });
 
   }
+
+  
 }
 
 /** Define the custom element */
