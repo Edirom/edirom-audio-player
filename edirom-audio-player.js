@@ -16,18 +16,6 @@ class EdiromAudioPlayer extends HTMLElement {
     /** attach shadow root with mode "open" */
     this.attachShadow({ mode: 'open' });
 
-    /** set global properties */
-    this.track = this.getAttribute('track') || 0;
-    this.tracks = this.getAttribute('tracks') || '[]';
-    this.height = this.getAttribute('height') || '100%';
-    this.width = this.getAttribute('width') || '100%';
-    this.state = this.getAttribute('state') || 'pause';
-    this.start = this.getAttribute('start') || 0;
-    this.end = this.getAttribute('end');
-    this.playbackrate = this.getAttribute('playbackrate') || 1;
-    this.playbackmode = this.getAttribute('playbackmode') || 'all';
-    this.displaymode = this.getAttribute('displaymode') || 'controls-lg';
-
     //Define a FontFace
     const font = new FontFace("Material Symbols Outlined", "url(https://fonts.gstatic.com/s/materialsymbolsoutlined/v192/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHOej.woff2)", {
       style: "normal",
@@ -37,32 +25,6 @@ class EdiromAudioPlayer extends HTMLElement {
     // wait for font 
     font.load().then((loaded_face) => {
       document.fonts.add(loaded_face)
-
-      // append content
-      this.shadowRoot.innerHTML += `
-        <style>
-            .mso {
-                font-family: 'Material Symbols Outlined';
-                font-weight: normal;
-                font-style: normal;
-                font-size: 24px;
-                line-height: 1;
-                letter-spacing: normal;
-                text-transform: none;
-                display: inline-block;
-                white-space: nowrap;
-                word-wrap: normal;
-                direction: ltr;
-                -moz-font-feature-settings: 'liga';
-                -moz-osx-font-smoothing: grayscale;
-            }
-        </style>
-
-        ${this.getCSS()}
-
-        ${this.getPlayerHTML()}
-
-        `;
 
       // add event listeners
       this.addEventListeners();
@@ -86,6 +48,23 @@ class EdiromAudioPlayer extends HTMLElement {
    * Invoked when the custom element is connected from the document's DOM.
    */
   connectedCallback() {
+
+    // set properties from attributes
+    this.props = Object.fromEntries(
+      Array.from(this.attributes).map(a => [a.name, a.value])
+    );
+
+    console.log("EdiromAudioPlayer connected with properties: ", this.props);
+
+    // initial rendering
+    if(!this.props.tracks) {
+      this.render();
+    } else {
+      const tracks = JSON.parse(this.props.tracks);
+      const track = this.props.track;
+      this.render();
+    }
+    
 
     // set event listeners again
     this.addEventListeners();
@@ -120,137 +99,44 @@ class EdiromAudioPlayer extends HTMLElement {
 
 
   /**
-   * Sets the value of a global property and triggers property update events.
-   * @param {string} property - The name of the property to set.
-   * @param {*} newPropertyValue - The new value to set for the property.
+   * Renders the EdiromAudioPlayer custom element with tracks content.
    */
-  set(property, newPropertyValue) {
+  render() {
+    
+    // get properties and prepare content
+    const tracks = this.props.tracks ? JSON.parse(this.props.tracks) : [];
+    const { track, height, width } = this.props;
 
-    // set internal and html properties  
-    this[property] = newPropertyValue;
-
-    // custom event for property update
-    const event = new CustomEvent('communicate-' + property + '-update', {
-      detail: { [property]: newPropertyValue },
-      bubbles: true
-    });
-    this.dispatchEvent(event);
-
-    // further handling of property change
-    this.handlePropertyChange(property, newPropertyValue);
-
-  }
-
-  /**
-   * Returns the HTML content for the player.
-   * @returns {string} The HTML content for the player.
-   */
-  getPlayerHTML() {
-
-    let playerInnerHTML;
-    playerInnerHTML = this.getControlsHTML(['skip_previous', 'play_arrow', 'skip_next', 'playlist_remove']);
-    playerInnerHTML += this.getTimeHTML();
-    playerInnerHTML += this.getTracksHTML();
-
-    return '<div id="player" class="' + this.displaymode + '" style="">' + playerInnerHTML + '</div>';
-
-  }
-
-  /**
-   * Returns the HTML content for the control buttons.
-   * @param {Array<string>} buttons - The list of button names.
-   * @returns {string} The HTML content for the control buttons.
-   */
-  getControlsHTML(buttons) {
-
-    const tracks = JSON.parse(this.tracks);
-    const currentTrack = tracks[this.track];
-    const trackSteps = [{ "replay": "0" }, { "skip_previous": "-1" }, { "skip_next": "+1" }];
-
-    let controlsDiv = document.createElement('div');
-    controlsDiv.id = 'controls';
-
-    // Create and fill audio element
-    let audioElem = document.createElement('audio');
-    audioElem.id = 'audioPlayer';
-    audioElem.controls = true;
-    audioElem.style.display = 'none';
-
-    // Create and fill source element
-    let sourceElem = document.createElement('source');
-    sourceElem.src = currentTrack.src;
-    sourceElem.type = currentTrack.type;
-    sourceElem.innerHTML = 'Your browser does not support the audio element.';
-
-    // Append elements
-    audioElem.appendChild(sourceElem);
-    controlsDiv.appendChild(audioElem);
-
-    // Create and fill button elements
-    buttons.forEach(button => {
-      let buttonElem = document.createElement('button');
-      buttonElem.id = button + 'Button';
-      buttonElem.title = button;
-
-      // add class and data-trackstep attribute to buttons to indicate how many tracks should be forwarded or rewinded
-      if (trackSteps.find(step => step[button])) {
-        buttonElem.classList.add('track-toggler');
-        buttonElem.dataset.trackstep = trackSteps.find(step => step[button])[button];
-      }
-
-      // Add icon to button
-      buttonElem.innerHTML = '<span class="mso">' + button + '</span>';
-
-      // Append button to controlsDiv
-      controlsDiv.appendChild(buttonElem);
-    });
-
-
-    return controlsDiv.outerHTML;
-  }
-
-  /**
-   * Returns the HTML content for the time information.
-   * @returns {string} The HTML content for the time information.
-   */
-  getTimeHTML() {
-
-    var timeHTML;
-    timeHTML = `
-      <div id="timeInfo">
-        <input type="range" id="progressSlider" min="0" max="100" value="0">
-        <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+    // prepare tracks content
+    const tracksHTML = tracks.map((thisTrack, idx) => `<div class="track-button track-toggler${idx == track ? ' current' : ''}" data-trackidx="${idx}">
+        <div class="track-title">${thisTrack.title}</div>
+        <div class="track-subtitle">${thisTrack.composer} - ${thisTrack.work}</div>
       </div>
-    `;
-    return timeHTML;
-  }
+      `).join('');
 
-  /**
-   * Returns the HTML content for the tracks.
-   * @returns {string} The HTML content for the tracks.
-   */
-  getTracksHTML() {
-    const tracks = JSON.parse(this.tracks);
-
-    const tracksHTML = tracks.map((track, idx) => `<div class="track-button track-toggler${idx == this.track ? ' current' : ''}" data-trackidx="${idx}">
-      <div class="track-title">${track.title}</div>
-      <div class="track-subtitle">${track.composer} - ${track.work}</div>
-    </div>
-    `).join('');
-
-    return '<div id="tracks">' + tracksHTML + '</div>';
-  }
-
-  /**
-   * Returns the CSS styles for the player.
-   * @returns {string} The CSS styles for the player.
-   */
-  getCSS() {
-    return `
-    <style>
+    // append content
+    this.shadowRoot.innerHTML = `
+      <style>
+        .mso {
+          font-family: 'Material Symbols Outlined';
+          font-weight: normal;
+          font-style: normal;
+          font-size: 24px;
+          line-height: 1;
+          letter-spacing: normal;
+          text-transform: none;
+          display: inline-block;
+          white-space: nowrap;
+          word-wrap: normal;
+          direction: ltr;
+          -moz-font-feature-settings: 'liga';
+          -moz-osx-font-smoothing: grayscale;
+        }
+      </style>
+      <style>
         #player {
-          height: 100%;
-          width: 100%;
+          height: ${height ?? '100%'};
+          width: ${width ?? '100%'};
           container: player / inline-size;
         }
         #player.hidden{
@@ -322,9 +208,65 @@ class EdiromAudioPlayer extends HTMLElement {
           }
         }
       </style>
-    `;
+
+      <div id="player" class="" style="">
+        <div id="controls">
+          <audio id="audioPlayer" controls style="display: none;">
+            <source src="${tracks[track].src}" type="${tracks[track].type}">
+              Your browser does not support the audio element.
+            </source>
+          </audio>
+          <button id="skip_previousButton" title="skip_previous" class="track-toggler" data-trackstep="-1"><span class="mso">skip_previous</span></button>
+          <button id="play_arrowButton" title="play"><span class="mso">play_arrow</span></button>
+          <button id="skip_nextButton" title="skip_next" class="track-toggler" data-trackstep="+1"><span class="mso">skip_next</span></button>
+          <button id="playlist_removeButton" title="playlist_remove"><span class="mso">playlist_remove</span></button>
+        </div>
+      </div>
+
+      <div id="timeInfo">
+        <input type="range" id="progressSlider" min="0" max="100" value="0">
+        <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+      </div>
+
+      <div id="tracks">
+        `+tracksHTML+`
+      </div>
+      `;
+  
+
+      // add event listeners again after rendering
+      this.addEventListeners();
   }
 
+
+  /**
+   * Sets the value of a global property and triggers property update events.
+   * @param {string} property - The name of the property to set.
+   * @param {*} newPropertyValue - The new value to set for the property.
+   */
+  set(property, newPropertyValue) {
+
+    // set properties from attributes
+    if (this.props === undefined) {
+      this.props = Object.fromEntries(
+        Array.from(this.attributes).map(a => [a.name, a.value])
+      );
+    } else {
+      this.props[property] = newPropertyValue;
+    }
+    
+
+    // custom event for property update
+    const event = new CustomEvent('communicate-' + property + '-update', {
+      detail: { [property]: newPropertyValue },
+      bubbles: true
+    });
+    this.dispatchEvent(event);
+
+    // further handling of property change
+    this.handlePropertyChange(property, newPropertyValue);
+
+  }
 
 
   /**
@@ -337,12 +279,8 @@ class EdiromAudioPlayer extends HTMLElement {
     // get necessary objects and check if available
     const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
     const playerDiv = this.shadowRoot.querySelector('#player');
-    const playButton = this.shadowRoot.querySelector('#play_arrowButton');
   
   
-    const source = this.shadowRoot.querySelector('source');
-    //if(audioPlayer === null || playerDiv === null || playButton === null || source === null )
-    //  return;
 
     // handle property change
     switch(property) {
@@ -352,8 +290,10 @@ class EdiromAudioPlayer extends HTMLElement {
 
         try {
 
+          const source = this.shadowRoot.querySelector('source');
+
           // set info at source element
-          const tracks =JSON.parse(this.tracks);
+          const tracks = JSON.parse(this.props.tracks);
           const nextTrack = tracks[newPropertyValue];
           if(source != null){
             source.src = nextTrack.src;
@@ -363,13 +303,13 @@ class EdiromAudioPlayer extends HTMLElement {
 
           // mark active track, if exists in DOM, therefore querySelectorAll() is used
           this.shadowRoot.querySelectorAll(".track-button").forEach((e) => { e.classList.remove('current'); });
-          this.shadowRoot.querySelectorAll('.track-button[data-trackidx="'+this.track+'"]').forEach((e) => { e.classList.add('current') });
+          this.shadowRoot.querySelectorAll('.track-button[data-trackidx="'+newPropertyValue+'"]').forEach((e) => { e.classList.add('current') });
 
           // handle audio player state
 
           (audioPlayer != null) ? audioPlayer.load() : console.log("Audio player not available");
 
-          this.set('start', this.start);
+          this.set('start', this.props.start);
           this.set('state', 'play');
 
         } catch (error) {
@@ -382,20 +322,27 @@ class EdiromAudioPlayer extends HTMLElement {
       // handle state setting
       case 'state':
 
-        // handle audio player state
-        if (audioPlayer != null && playButton != null) {
-          if (newPropertyValue === 'play' && audioPlayer != null && playButton != null) {
-            audioPlayer.play();
-            playButton.innerHTML = '<span class="mso">pause</span>';
-            playButton.setAttribute('title', 'pause');
-          } else if(newPropertyValue === 'pause' && audioPlayer != null && playButton != null) {
-            (audioPlayer != null) ? audioPlayer.pause() : console.log("Audio player not available");
-            playButton.innerHTML = '<span class="mso">play_arrow</span>';
-            playButton.setAttribute('title', 'play');
-          } else {
-            console.log("Invalid audio player state property: '"+newPropertyValue+"'");
-          }
-        }        
+        const playButton = this.shadowRoot.querySelector('#play_arrowButton');
+        
+        if (newPropertyValue === 'play') {
+          // if audio player is currently paused, play it
+          this.shadowRoot.querySelector('#audioPlayer').play();
+
+          // set play button to pause
+          playButton.setAttribute('title', 'pause');
+          playButton.innerHTML = '<span class="mso">pause</span>';
+
+        }
+        
+        if(newPropertyValue === 'pause') {
+          // if audio player is currently playing, pause it
+          this.shadowRoot.querySelector('#audioPlayer').pause();
+
+          // set play button to play
+          playButton.setAttribute('title', 'play');
+          playButton.innerHTML = '<span class="mso">play_arrow</span>';  
+        } 
+              
         break;  
 
       // handle time setting
@@ -426,7 +373,7 @@ class EdiromAudioPlayer extends HTMLElement {
         const tracksButton = this.shadowRoot.querySelector('#playlist_removeButton');
         
         
-        switch(this.displaymode) { 
+        switch(this.props.displaymode) { 
           case 'hidden':
             
             break;
@@ -460,7 +407,7 @@ class EdiromAudioPlayer extends HTMLElement {
             break;
           default:
             
-            console.log("Invalid displaymode: '"+this.displaymode+"'");
+            console.log("Invalid displaymode: '"+this.props.displaymode+"'");
         }
         
         break;
@@ -485,10 +432,13 @@ class EdiromAudioPlayer extends HTMLElement {
 
       // handle tracks setting
       case 'tracks':
-        // if content div is ready, update it
-        if(!this.shadowRoot.querySelector('#content') === null){
-          this.shadowRoot.querySelector('#content').innerHTML = this.getPlayerHTML();
-        }        
+
+        // get the tracks from custom element property and parse it to JSON
+        const tracks = JSON.parse(this.props.tracks);
+        const track = this.props.track;
+
+        this.render();
+
         break;
 
       // handle default
@@ -516,8 +466,8 @@ class EdiromAudioPlayer extends HTMLElement {
 
     /** Event listener for play/pause button */
     this.shadowRoot.querySelectorAll('#play_arrowButton').forEach(el => {
-      el.addEventListener('click', () => {
-        return audioPlayer.paused ? this.set('state', 'play') : this.set('state', 'pause');      
+      el.addEventListener('click', (evt) => {
+        this.set("state", evt.currentTarget.getAttribute('title'));
       });
     });
     
@@ -530,15 +480,16 @@ class EdiromAudioPlayer extends HTMLElement {
     this.shadowRoot.querySelectorAll('.track-toggler').forEach(el => {
       el.addEventListener('click', (evt) => {
 
-        const tracksJSON = JSON.parse(this.tracks);
+        const tracksJSON = JSON.parse(this.props.tracks);
         const trackStep = evt.currentTarget.dataset.trackstep;
         const trackIdx = evt.currentTarget.dataset.trackidx;
   
-        var nextTrackIndex = !!trackIdx ? trackIdx : (parseInt(this.track) + parseInt(trackStep));
+        var nextTrackIndex = !!trackIdx ? trackIdx : (parseInt(this.props.track) + parseInt(trackStep));
 
         if(nextTrackIndex < 0) { nextTrackIndex = tracksJSON.length - 1 }
         if(nextTrackIndex >= tracksJSON.length) { nextTrackIndex = 0 }
         
+
         this.set('track', nextTrackIndex);
       });
 
@@ -582,15 +533,15 @@ class EdiromAudioPlayer extends HTMLElement {
     
 
         // if audioPlayer is currently playing and end is reached, pause there
-        const end = Number(this.end);
+        const end = Number(this.props.end);
 
-        if(this.state === 'play' && !isNaN(Number(end)) && end > 0 ) {
+        if(this.props.state === 'play' && !isNaN(Number(end)) && end > 0 ) {
           if (audioPlayer.currentTime >= end || audioPlayer.currentTime >= audioPlayer.duration) {
 
             this.set('state', 'pause');
 
             // and now decide how to proceed
-            switch(this.playbackmode) {
+            switch(this.props.playbackmode) {
               case 'off':
                 // do nothing
                 break;
@@ -600,16 +551,16 @@ class EdiromAudioPlayer extends HTMLElement {
                 nextButton.click();
                 break;
               case 'repeatOne':
-                audioPlayer.currentTime = this.start;
+                audioPlayer.currentTime = this.props.start;
                 audioPlayer.play();
                 break;
               case 'shuffle':
                 // shuffle tracks
-                let randomTrackIndex = Math.floor(Math.random() * JSON.parse(this.tracks).length);
+                let randomTrackIndex = Math.floor(Math.random() * JSON.parse(this.props.tracks).length);
                 this.set('track', randomTrackIndex);
                 break;
               default:
-                console.log("Invalid playbackmode: '"+this.playbackmode+"'");
+                console.log("Invalid playbackmode: '"+this.props.playbackmode+"'");
             }
           }
         }
