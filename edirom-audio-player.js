@@ -54,8 +54,6 @@ class EdiromAudioPlayer extends HTMLElement {
       Array.from(this.attributes).map(a => [a.name, a.value])
     );
 
-    console.log("EdiromAudioPlayer connected with properties: ", this.props);
-
     // initial rendering
     if(!this.props.tracks) {
       this.render();
@@ -246,7 +244,7 @@ class EdiromAudioPlayer extends HTMLElement {
    */
   set(property, newPropertyValue) {
 
-    // set properties from attributes
+    // set properties from attributes (if not yet done)
     if (this.props === undefined) {
       this.props = Object.fromEntries(
         Array.from(this.attributes).map(a => [a.name, a.value])
