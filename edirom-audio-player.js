@@ -25,10 +25,6 @@ class EdiromAudioPlayer extends HTMLElement {
     // wait for font 
     font.load().then((loaded_face) => {
       document.fonts.add(loaded_face)
-
-      // add event listeners
-      this.addEventListeners();
-
     }).catch((error) => { });
 
   }
@@ -40,7 +36,7 @@ class EdiromAudioPlayer extends HTMLElement {
    * @returns {Array<string>} The list of observed attributes.
    */
   static get observedAttributes() {
-    return ['track', 'tracks', 'height', 'width', 'state', 'start', 'end', 'playbackrate', 'playbackmode', 'displaymode'];
+    return ['track', 'tracks', 'height', 'width', 'state', 'start', 'end', 'playbackrate', 'progressbar', 'playlist'];
   }
 
 
@@ -62,10 +58,7 @@ class EdiromAudioPlayer extends HTMLElement {
       const track = this.props.track;
       this.render();
     }
-    
-
-    // set event listeners again
-    this.addEventListeners();
+  
 
   }
 
@@ -141,7 +134,7 @@ class EdiromAudioPlayer extends HTMLElement {
           display: none;
         }
         #controls {
-          display: flex;
+          display: inline-block;
           align-items: center;
           gap: 10px;
         }
@@ -156,15 +149,22 @@ class EdiromAudioPlayer extends HTMLElement {
           display: none;
         }
         #timeInfo {
+          display: inline-block;
           margin-top: 10px;
         }
         #timeInfo input {
-          min-width: 70%;
+          width: 100px;
         }
         #timeInfo span {
-          font-size: 0.875rem;
+          font-size: 0.85rem;
           font-family: 'Roboto', sans-serif;
           text-align: center;
+        }
+        #timer {
+          display: inline-block;
+          margin-top: 4px;
+          position: absolute;
+          margin-left: 5px; 
         }
         .track-button {
           display: block;
@@ -180,12 +180,16 @@ class EdiromAudioPlayer extends HTMLElement {
           background-color: #e6e6e6;
           transition: background-color 0.3s;
           position: relative;
+          cursor: pointer;
         }
         .track-button:hover, .track-button.current {
           background-color: #d5d5d5;
         }
+        .track-button.current {
+          font-weight: 700;
+        }
         .track-button:active {
-          background-color: #aaaaaa;
+          background-color:rgb(153, 153, 153);
         }
         .track-button:focus {
           outline: none;
@@ -219,12 +223,14 @@ class EdiromAudioPlayer extends HTMLElement {
           <button id="skip_nextButton" title="skip_next" class="track-toggler" data-trackstep="+1"><span class="mso">skip_next</span></button>
           <button id="playlist_removeButton" title="playlist_remove"><span class="mso">playlist_remove</span></button>
         </div>
+
+        <div id="timeInfo">
+          <input type="range" id="progressSlider" min="0" max="100" value="0">
+          <div id="timer"><span id="currentTime">0:00</span> / <span id="totalTime">0:00</span></div>
+        </div>
+
       </div>
 
-      <div id="timeInfo">
-        <input type="range" id="progressSlider" min="0" max="100" value="0">
-        <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
-      </div>
 
       <div id="tracks">
         `+tracksHTML+`
@@ -358,57 +364,20 @@ class EdiromAudioPlayer extends HTMLElement {
         (audioPlayer != null) ? audioPlayer.playbackRate = newPropertyValue : console.log("Audio player not available"); 
         break;
 
-      // handle playbackmode setting
-      case 'playbackmode':
-        
+      // handle progressbar setting
+      case 'progressbar':
+        const timeInfo = this.shadowRoot.querySelector('#timeInfo');
+        if(timeInfo) timeInfo.style.display = newPropertyValue === 'true' ? 'block' : 'none';
         break;
 
-      // handle displaymode setting
-      case 'displaymode':
-
+      // handle playlist setting
+      case 'playlist':
         const tracksDiv = this.shadowRoot.querySelector('#tracks');
-        const sliderDiv = this.shadowRoot.querySelector('#timeInfo');
         const tracksButton = this.shadowRoot.querySelector('#playlist_removeButton');
-        
-        
-        switch(this.props.displaymode) { 
-          case 'hidden':
-            
-            break;
-          case 'controls-sm':
-            if(tracksDiv === null) return;
-            tracksDiv.style.display = 'none';
-            sliderDiv.style.display = 'none';
-            tracksButton.innerHTML = '<span class="mso">playlist_add</span>';    
-        
-            break;
-          case 'controls-md':
-            if(tracksDiv === null) return;
-            tracksDiv.style.display = 'none';
-            sliderDiv.style.display = 'block';
-            tracksButton.innerHTML = '<span class="mso">playlist_add</span>';           
-            break;
-          case 'controls-lg':
-            if(tracksDiv === null) return;
-            tracksDiv.style.display = 'block';
-            sliderDiv.style.display = 'block'; 
-            tracksButton.innerHTML = '<span class="mso">playlist_remove</span>';  
-            break;
-          case 'tracks-sm':
-            
-            break;
-          case 'tracks-md':
-            
-            break;
-          case 'tracks-lg':
-            
-            break;
-          default:
-            
-            console.log("Invalid displaymode: '"+this.props.displaymode+"'");
+        if(tracksDiv && tracksButton) {
+          tracksDiv.style.display = newPropertyValue === 'true' ? 'block' : 'none';
+          tracksButton.style.display = newPropertyValue === 'true' ? 'inline-block' : 'none';
         }
-        
-        break;
 
       // handle height setting
       case 'height':
@@ -481,14 +450,19 @@ class EdiromAudioPlayer extends HTMLElement {
         const tracksJSON = JSON.parse(this.props.tracks);
         const trackStep = evt.currentTarget.dataset.trackstep;
         const trackIdx = evt.currentTarget.dataset.trackidx;
-  
-        var nextTrackIndex = !!trackIdx ? trackIdx : (parseInt(this.props.track) + parseInt(trackStep));
 
-        if(nextTrackIndex < 0) { nextTrackIndex = tracksJSON.length - 1 }
-        if(nextTrackIndex >= tracksJSON.length) { nextTrackIndex = 0 }
-        
-
-        this.set('track', nextTrackIndex);
+        // if trackIdx is available, it will be used as next track index
+        if(trackIdx !== undefined) {
+          console.log("Using track index from dataset: ", trackIdx);
+          this.set('track', trackIdx);
+        }
+        // if trackIdx is not available, the next track index will be calculated by adding the track step to the current track index
+        else {
+          var nextTrackIndex = (parseInt(this.props.track) + parseInt(trackStep));
+          if(nextTrackIndex < 0) { nextTrackIndex = tracksJSON.length - 1 }
+          if(nextTrackIndex >= tracksJSON.length) { nextTrackIndex = 0 }
+          this.set('track', nextTrackIndex);
+        }
       });
 
     });
@@ -538,33 +512,8 @@ class EdiromAudioPlayer extends HTMLElement {
 
             this.set('state', 'pause');
 
-            // and now decide how to proceed
-            switch(this.props.playbackmode) {
-              case 'off':
-                // do nothing
-                break;
-              case 'repeat':
-                // go to next track and play from start to end
-                let nextButton = this.shadowRoot.querySelector('#skip_nextButton');
-                nextButton.click();
-                break;
-              case 'repeatOne':
-                audioPlayer.currentTime = this.props.start;
-                audioPlayer.play();
-                break;
-              case 'shuffle':
-                // shuffle tracks
-                let randomTrackIndex = Math.floor(Math.random() * JSON.parse(this.props.tracks).length);
-                this.set('track', randomTrackIndex);
-                break;
-              default:
-                console.log("Invalid playbackmode: '"+this.props.playbackmode+"'");
-            }
           }
         }
-
-        // handle playbackmodes (shuffle, repeat, repeatOne)
-        
 
       });
     });
