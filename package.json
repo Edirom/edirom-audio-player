@@ -1,0 +1,24 @@
+{
+  "name": "edirom-audio-player",
+  "version": "0.2",
+  "description": "This web component implements an audio player based on the HTML5 audio facility. It is intended to be used in tbe Edirom Online, and can also be (re-)used in other web applications.",
+  "homepage": "https://github.com/Edirom/edirom-audio-player#readme",
+  "bugs": {
+    "url": "https://github.com/Edirom/edirom-audio-player/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Edirom/edirom-audio-player.git"
+  },
+  "license": "GPL-3.0",
+  "author": "Daniel Jettka <daniel.jettka@uni-paderborn.de>",
+  "type": "commonjs",
+  "main": "edirom-audio-player.js",
+  "files": [
+    "edirom-audio-player.js",
+  ],
+  "keywords": ["web-component", "custom-element", "audio", "Edirom Online"],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
