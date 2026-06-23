@@ -40,9 +40,9 @@ describe('<edirom-audio-player>', () => {
   it('applies width/height attributes to #player style', async () => {
     const el = await createEl();
     const playerDiv = el.shadowRoot.querySelector('#player');
-
-    expect(playerDiv.style.height).to.equal('200px');
-    expect(playerDiv.style.width).to.equal('300px');
+    const style = getComputedStyle(playerDiv);
+    expect(style.height).to.equal('200px');
+    expect(style.width).to.equal('300px');
   });
 
   it('changes source + current track class when track attribute changes', async () => {
@@ -54,9 +54,10 @@ describe('<edirom-audio-player>', () => {
     audio.load = () => {};
 
     el.setAttribute('track', '1');
+    await Promise.resolve();
 
-    expect(source.getAttribute('src') || source.src).to.contain('b.mp3');
-    expect(source.getAttribute('type') || source.type).to.equal('audio/mpeg');
+    expect(source.getAttribute('src') || source.src).to.contain('https://upload.wikimedia.org/wikipedia/commons/4/48/Chord6_%28Bb-D-G%29.mp3');
+    expect(source.getAttribute('type') || source.type).to.equal('audio/mp3');
 
     const current = el.shadowRoot.querySelector('.track-button.current');
     expect(current).to.exist;

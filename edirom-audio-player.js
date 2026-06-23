@@ -341,6 +341,7 @@ class EdiromAudioPlayer extends HTMLElement {
         const playButton = this.shadowRoot.querySelector('#play_arrowButton');
         
         if (newPropertyValue === 'play') {
+
           // if audio player is currently paused, play it
           this.shadowRoot.querySelector('#audioPlayer').play();
 
