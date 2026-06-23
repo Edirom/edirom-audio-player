@@ -13,6 +13,9 @@ class EdiromAudioPlayer extends HTMLElement {
 
     super();
 
+    // set initial state
+    this._isReady = false;
+
     /** attach shadow root with mode "open" */
     this.attachShadow({ mode: 'open' });
 
@@ -59,6 +62,8 @@ class EdiromAudioPlayer extends HTMLElement {
       this.render();
     }
   
+    // after initial rendering, set the initial state of the audio player
+    this._isReady = true;
 
   }
 
@@ -96,7 +101,9 @@ class EdiromAudioPlayer extends HTMLElement {
     
     // get properties and prepare content
     const tracks = this.props.tracks ? JSON.parse(this.props.tracks) : [];
-    const { track, height, width } = this.props;
+    const { height, width } = this.props;
+    const track = Number(this.props.track ?? 0);
+    const safeTrack = tracks[track] ?? { src: '', type: 'audio/mp3' };
 
     // prepare tracks content
     const tracksHTML = tracks.map((thisTrack, idx) => `<div class="track-button track-toggler${idx == track ? ' current' : ''}" data-trackidx="${idx}">
@@ -214,7 +221,7 @@ class EdiromAudioPlayer extends HTMLElement {
       <div id="player" class="" style="">
         <div id="controls">
           <audio id="audioPlayer" controls style="display: none;">
-            <source src="${tracks[track].src}" type="${tracks[track].type}">
+            <source src="${safeTrack.src}" type="${safeTrack.type}">
               Your browser does not support the audio element.
             </source>
           </audio>
@@ -268,7 +275,9 @@ class EdiromAudioPlayer extends HTMLElement {
     this.dispatchEvent(event);
 
     // further handling of property change
-    this.handlePropertyChange(property, newPropertyValue);
+    if (this._isReady) {
+      this.handlePropertyChange(property, newPropertyValue);
+    }
 
   }
 
@@ -281,6 +290,9 @@ class EdiromAudioPlayer extends HTMLElement {
   handlePropertyChange(property, newPropertyValue) {
 
     // get necessary objects and check if available
+    const audio = this.shadowRoot.querySelector('#audioPlayer');
+    if (!audio) return;
+    
     const audioPlayer = this.shadowRoot.querySelector('#audioPlayer');
     const playerDiv = this.shadowRoot.querySelector('#player');
   

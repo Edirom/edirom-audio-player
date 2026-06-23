@@ -2,8 +2,8 @@ import { fixture, html, expect, oneEvent } from '@open-wc/testing';
 import '../edirom-audio-player.js';
 
 const TRACKS = [
-  { title: 'Track 1', composer: 'Comp A', work: 'Work A', src: 'a.mp3', type: 'audio/mpeg' },
-  { title: 'Track 2', composer: 'Comp B', work: 'Work B', src: 'b.mp3', type: 'audio/mpeg' }
+  { title: 'Track 1', composer: 'Comp A', work: 'Work A', src: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Chord4.1_%28G-Eb-G%29.mp3', type: 'audio/mp3' },
+  { title: 'Track 2', composer: 'Comp B', work: 'Work B', src: 'https://upload.wikimedia.org/wikipedia/commons/4/48/Chord6_%28Bb-D-G%29.mp3', type: 'audio/mp3' }
 ];
 
 function createEl() {
