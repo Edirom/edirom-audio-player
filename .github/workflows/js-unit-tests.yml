@@ -32,7 +32,7 @@ jobs:
           echo $! > .server.pid
 
       - name: Run JS unit tests
-        run: node test/run-js-unit-tests.mjs
+        run: node testing/run-js-unit-tests.mjs
 
       - name: Stop static server
         if: always()
