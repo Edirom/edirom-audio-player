@@ -2,12 +2,34 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>edirom-audio-player pure JS tests</title>
+  <title>JS Unit Tests</title>
 </head>
 <body>
   <script type="module">
     import '../edirom-audio-player.js';
 
+    // --- CI media patch: avoid autoplay/user-gesture failures in headless browsers ---
+    (() => {
+    const originalPlay = HTMLMediaElement.prototype.play;
+    const originalPause = HTMLMediaElement.prototype.pause;
+
+    HTMLMediaElement.prototype.play = function () {
+        // simulate successful play without triggering browser autoplay policy
+        return Promise.resolve();
+    };
+
+    HTMLMediaElement.prototype.pause = function () {
+        // no-op for tests
+    };
+
+    // optional: expose restore helper for debugging
+    window.__restoreMediaFns = () => {
+        HTMLMediaElement.prototype.play = originalPlay;
+        HTMLMediaElement.prototype.pause = originalPause;
+    };
+    })();
+
+    // ---------- test data ----------
     const TRACKS = [
       { title: 'Track 1', composer: 'Comp A', work: 'Work A', src: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Chord4.1_%28G-Eb-G%29.mp3', type: 'audio/mp3' },
       { title: 'Track 2', composer: 'Comp B', work: 'Work B', src: 'https://upload.wikimedia.org/wikipedia/commons/4/48/Chord6_%28Bb-D-G%29.mp3', type: 'audio/mp3' }
@@ -64,11 +86,11 @@
     }
 
     // ---------- tests ----------
-    test('is defined', () => {
+    test('Custom element is defined', () => {
       assert(!!customElements.get('edirom-audio-player'), 'custom element is not defined');
     });
 
-    test('renders player, controls and track list', async () => {
+    test('Correct rendering of player, controls and track list', async () => {
       const el = createEl();
       try {
         const sr = el.shadowRoot;
@@ -79,7 +101,7 @@
       } finally { cleanupEl(el); }
     });
 
-    test('applies width/height attributes to #player style', async () => {
+    test('Correct application of width/height attributes to #player style', async () => {
       const el = createEl();
       try {
         const playerDiv = el.shadowRoot.querySelector('#player');
@@ -89,7 +111,7 @@
       } finally { cleanupEl(el); }
     });
 
-    test('changes source + current track class when track attribute changes', async () => {
+    test('Correct changing of source + current track class when track attribute changes', async () => {
       const el = createEl();
       try {
         const source = el.shadowRoot.querySelector('source');
@@ -107,7 +129,7 @@
       } finally { cleanupEl(el); }
     });
 
-    test('toggles play/pause button title and icon when state changes', async () => {
+    test('Correct toggling of play/pause button title and icon when state changes', async () => {
       const el = createEl();
       try {
         const audio = el.shadowRoot.querySelector('#audioPlayer');
@@ -129,7 +151,7 @@
       } finally { cleanupEl(el); }
     });
 
-    test('emits communicate-state-update custom event on state change', async () => {
+    test('Correct emission of communicate-state-update custom event on state change', async () => {
       const el = createEl();
       try {
         const p = waitEvent(el, 'communicate-state-update');
@@ -139,7 +161,7 @@
       } finally { cleanupEl(el); }
     });
 
-    test('shows/hides progressbar via progressbar attribute', async () => {
+    test('Correct showing/hiding of progressbar via progressbar attribute', async () => {
       const el = createEl();
       try {
         const timeInfo = el.shadowRoot.querySelector('#timeInfo');
@@ -150,7 +172,7 @@
       } finally { cleanupEl(el); }
     });
 
-    test('shows/hides playlist and playlist button via playlist attribute', async () => {
+    test('Correct showing/hiding of playlist and playlist button via playlist attribute', async () => {
       const el = createEl();
       try {
         const tracksDiv = el.shadowRoot.querySelector('#tracks');
@@ -166,7 +188,7 @@
       } finally { cleanupEl(el); }
     });
 
-    test('updates current time display and emits communicate-time-update on timeupdate', async () => {
+    test('Correct updates to current time display and emission of communicate-time-update on timeupdate', async () => {
       const el = createEl();
       try {
         const audio = el.shadowRoot.querySelector('#audioPlayer');
@@ -184,7 +206,7 @@
       } finally { cleanupEl(el); }
     });
 
-    test('clicking playlist button toggles tracks visibility', async () => {
+    test('Correct clicking of playlist button toggles tracks visibility', async () => {
       const el = createEl();
       try {
         const tracksDiv = el.shadowRoot.querySelector('#tracks');

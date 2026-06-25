@@ -1,4 +1,4 @@
-name: Pure JS Unit Tests
+name: JS Unit Tests
 
 on:
   push:
@@ -31,8 +31,8 @@ jobs:
           npx http-server . -p 8080 &
           echo $! > .server.pid
 
-      - name: Run pure JS tests
-        run: node test/run-pure-tests.mjs
+      - name: Run JS unit tests
+        run: node test/run-js-unit-tests.mjs
 
       - name: Stop static server
         if: always()
