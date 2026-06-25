@@ -1,4 +1,4 @@
-const { chromium } = require('playwright');
+import { chromium } from 'playwright';
 
 (async () => {
   const TEST_URL = 'http://127.0.0.1:8080/testing/js-unit-tests.html';
