@@ -1,7 +1,7 @@
 {
   "name": "edirom-audio-player",
   "version": "0.2",
-  "description": "This web component implements an audio player based on the HTML5 audio facility. It is intended to be used in tbe Edirom Online, and can also be (re-)used in other web applications.",
+  "description": "This web component implements an audio player based on the HTML5 audio facility. It is intended to be used in the Edirom Online, and can also be (re-)used in other web applications.",
   "homepage": "https://github.com/Edirom/edirom-audio-player#readme",
   "bugs": {
     "url": "https://github.com/Edirom/edirom-audio-player/issues"
@@ -19,12 +19,12 @@
   ],
   "keywords": ["web-component", "custom-element", "audio", "Edirom Online"],
   "scripts": {
-    "test": "web-test-runner --playwright --browsers chromium",
-    "test:watch": "web-test-runner --playwright --browsers chromium --watch"
+    "serve:test": "http-server . -p 8080",
+    "test": "node testing/run-js-unit-tests.mjs",
+    "test:ci": "node testing/run-js-unit-tests.mjs"
   },
   "devDependencies": {
-    "@open-wc/testing": "^4.0.0",
-    "@web/test-runner": "^0.19.0",
-    "@web/test-runner-playwright": "^0.11.0"
+    "http-server": "^14.1.1",
+    "playwright": "^1.54.1"
   }
 }
