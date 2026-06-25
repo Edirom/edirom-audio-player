@@ -1,0 +1,219 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>edirom-audio-player pure JS tests</title>
+</head>
+<body>
+  <script type="module">
+    import '../edirom-audio-player.js';
+
+    const TRACKS = [
+      { title: 'Track 1', composer: 'Comp A', work: 'Work A', src: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Chord4.1_%28G-Eb-G%29.mp3', type: 'audio/mp3' },
+      { title: 'Track 2', composer: 'Comp B', work: 'Work B', src: 'https://upload.wikimedia.org/wikipedia/commons/4/48/Chord6_%28Bb-D-G%29.mp3', type: 'audio/mp3' }
+    ];
+
+    // ---------- tiny test utils ----------
+    const tests = [];
+    function test(name, fn) { tests.push({ name, fn }); }
+    function assert(cond, msg = 'Assertion failed') {
+      if (!cond) throw new Error(msg);
+    }
+    function assertEq(actual, expected, msg = '') {
+      if (actual !== expected) throw new Error(`${msg}\nExpected: ${expected}\nActual: ${actual}`);
+    }
+    function assertIncludes(haystack, needle, msg = '') {
+      if (!String(haystack).includes(needle)) {
+        throw new Error(`${msg}\nExpected to include: ${needle}\nActual: ${haystack}`);
+      }
+    }
+    function nextTick() {
+      return Promise.resolve();
+    }
+    function waitEvent(target, eventName, timeout = 2000) {
+      return new Promise((resolve, reject) => {
+        const t = setTimeout(() => {
+          target.removeEventListener(eventName, onEvent);
+          reject(new Error(`Timed out waiting for event "${eventName}"`));
+        }, timeout);
+        function onEvent(ev) {
+          clearTimeout(t);
+          resolve(ev);
+        }
+        target.addEventListener(eventName, onEvent, { once: true });
+      });
+    }
+
+    function createEl() {
+      const el = document.createElement('edirom-audio-player');
+      el.setAttribute('track', '0');
+      el.setAttribute('tracks', JSON.stringify(TRACKS));
+      el.setAttribute('progressbar', 'true');
+      el.setAttribute('playlist', 'true');
+      el.setAttribute('start', '0');
+      el.setAttribute('end', '0');
+      el.setAttribute('state', 'pause');
+      el.setAttribute('height', '200px');
+      el.setAttribute('width', '300px');
+      document.body.appendChild(el);
+      return el;
+    }
+
+    function cleanupEl(el) {
+      if (el?.parentNode) el.parentNode.removeChild(el);
+    }
+
+    // ---------- tests ----------
+    test('is defined', () => {
+      assert(!!customElements.get('edirom-audio-player'), 'custom element is not defined');
+    });
+
+    test('renders player, controls and track list', async () => {
+      const el = createEl();
+      try {
+        const sr = el.shadowRoot;
+        assert(sr.querySelector('#player'), '#player missing');
+        assert(sr.querySelector('#audioPlayer'), '#audioPlayer missing');
+        assertEq(sr.querySelectorAll('.track-button').length, 2, 'wrong track count');
+        assertEq(sr.querySelector('.track-button.current')?.dataset.trackidx, '0', 'wrong current track');
+      } finally { cleanupEl(el); }
+    });
+
+    test('applies width/height attributes to #player style', async () => {
+      const el = createEl();
+      try {
+        const playerDiv = el.shadowRoot.querySelector('#player');
+        const style = getComputedStyle(playerDiv);
+        assertEq(style.height, '200px', 'height mismatch');
+        assertEq(style.width, '300px', 'width mismatch');
+      } finally { cleanupEl(el); }
+    });
+
+    test('changes source + current track class when track attribute changes', async () => {
+      const el = createEl();
+      try {
+        const source = el.shadowRoot.querySelector('source');
+        const audio = el.shadowRoot.querySelector('#audioPlayer');
+        audio.load = () => {};
+
+        el.setAttribute('track', '1');
+        await nextTick();
+
+        assertIncludes(source.getAttribute('src') || source.src, 'Chord6_%28Bb-D-G%29.mp3', 'source not updated');
+        assertEq(source.getAttribute('type') || source.type, 'audio/mp3', 'type not updated');
+        const current = el.shadowRoot.querySelector('.track-button.current');
+        assert(current, 'current track button missing');
+        assertEq(current.dataset.trackidx, '1', 'current track idx not updated');
+      } finally { cleanupEl(el); }
+    });
+
+    test('toggles play/pause button title and icon when state changes', async () => {
+      const el = createEl();
+      try {
+        const audio = el.shadowRoot.querySelector('#audioPlayer');
+        const playBtn = el.shadowRoot.querySelector('#play_arrowButton');
+
+        let played = false, paused = false;
+        audio.play = async () => { played = true; };
+        audio.pause = () => { paused = true; };
+
+        el.setAttribute('state', 'play');
+        assertEq(played, true, 'play() not called');
+        assertEq(playBtn.getAttribute('title'), 'pause', 'title should be pause');
+        assertIncludes(playBtn.innerHTML, 'pause', 'pause icon missing');
+
+        el.setAttribute('state', 'pause');
+        assertEq(paused, true, 'pause() not called');
+        assertEq(playBtn.getAttribute('title'), 'play', 'title should be play');
+        assertIncludes(playBtn.innerHTML, 'play_arrow', 'play icon missing');
+      } finally { cleanupEl(el); }
+    });
+
+    test('emits communicate-state-update custom event on state change', async () => {
+      const el = createEl();
+      try {
+        const p = waitEvent(el, 'communicate-state-update');
+        el.setAttribute('state', 'play');
+        const ev = await p;
+        assertEq(ev.detail.state, 'play', 'event detail mismatch');
+      } finally { cleanupEl(el); }
+    });
+
+    test('shows/hides progressbar via progressbar attribute', async () => {
+      const el = createEl();
+      try {
+        const timeInfo = el.shadowRoot.querySelector('#timeInfo');
+        el.setAttribute('progressbar', 'false');
+        assertEq(timeInfo.style.display, 'none', 'progressbar should be hidden');
+        el.setAttribute('progressbar', 'true');
+        assertEq(timeInfo.style.display, 'block', 'progressbar should be visible');
+      } finally { cleanupEl(el); }
+    });
+
+    test('shows/hides playlist and playlist button via playlist attribute', async () => {
+      const el = createEl();
+      try {
+        const tracksDiv = el.shadowRoot.querySelector('#tracks');
+        const playlistBtn = el.shadowRoot.querySelector('#playlist_removeButton');
+
+        el.setAttribute('playlist', 'false');
+        assertEq(tracksDiv.style.display, 'none', 'tracks should be hidden');
+        assertEq(playlistBtn.style.display, 'none', 'playlist btn should be hidden');
+
+        el.setAttribute('playlist', 'true');
+        assertEq(tracksDiv.style.display, 'block', 'tracks should be visible');
+        assertEq(playlistBtn.style.display, 'inline-block', 'playlist btn should be visible');
+      } finally { cleanupEl(el); }
+    });
+
+    test('updates current time display and emits communicate-time-update on timeupdate', async () => {
+      const el = createEl();
+      try {
+        const audio = el.shadowRoot.querySelector('#audioPlayer');
+        const currentTimeDisplay = el.shadowRoot.querySelector('#currentTime');
+
+        Object.defineProperty(audio, 'duration', { configurable: true, value: 120 });
+        Object.defineProperty(audio, 'currentTime', { configurable: true, writable: true, value: 65 });
+
+        const p = waitEvent(el, 'communicate-time-update');
+        audio.dispatchEvent(new Event('timeupdate'));
+        const ev = await p;
+
+        assertEq(ev.detail.time, 65, 'wrong emitted time');
+        assertEq(currentTimeDisplay.textContent, '1:05', 'time display mismatch');
+      } finally { cleanupEl(el); }
+    });
+
+    test('clicking playlist button toggles tracks visibility', async () => {
+      const el = createEl();
+      try {
+        const tracksDiv = el.shadowRoot.querySelector('#tracks');
+        const btn = el.shadowRoot.querySelector('#playlist_removeButton');
+
+        btn.click();
+        assertEq(tracksDiv.style.display, 'none', 'first click should hide');
+        btn.click();
+        assertEq(tracksDiv.style.display, 'block', 'second click should show');
+      } finally { cleanupEl(el); }
+    });
+
+    // Expose deterministic CI result
+    window.__testResults = { total: tests.length, passed: 0, failed: 0, done: false };
+
+    (async function run() {
+      for (const t of tests) {
+        try {
+          await t.fn();
+          window.__testResults.passed++;
+          console.log(`✅ ${t.name}`);
+        } catch (e) {
+          window.__testResults.failed++;
+          console.error(`❌ ${t.name}`, e);
+        }
+      }
+      window.__testResults.done = true;
+      console.log(`RESULT: ${window.__testResults.passed}/${window.__testResults.total} passed`);
+    })();
+  </script>
+</body>
+</html>

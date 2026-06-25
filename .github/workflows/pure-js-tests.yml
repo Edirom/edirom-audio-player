@@ -1,0 +1,39 @@
+name: Pure JS Unit Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          npm ci || npm install
+          npm install --no-save playwright http-server
+
+      - name: Install Chromium
+        run: npx playwright install chromium
+
+      - name: Start static server
+        run: |
+          npx http-server . -p 8080 &
+          echo $! > .server.pid
+
+      - name: Run pure JS tests
+        run: node test/run-pure-tests.mjs
+
+      - name: Stop static server
+        if: always()
+        run: kill $(cat .server.pid)
