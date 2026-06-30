@@ -20,8 +20,8 @@
   "keywords": ["web-component", "custom-element", "audio", "Edirom Online"],
   "scripts": {
     "serve:test": "http-server . -p 8080",
-    "test": "node testing/run-js-unit-tests.mjs",
-    "test:ci": "node testing/run-js-unit-tests.mjs"
+    "test": "node tests/run-js-unit-tests.mjs",
+    "test:ci": "node tests/run-js-unit-tests.mjs"
   },
   "devDependencies": {
     "http-server": "^14.1.1",

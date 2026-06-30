@@ -23,5 +23,5 @@ Refs https://github.com/Edirom/edirom-audio-player/issues/{ISSUE_NUMBER}
 - I have updated the inline documentation accordingly.
 - I have performed a self-review of my code.
 - I have read the [CONTRIBUTING](https://github.com/Edirom/edirom-audio-player/blob/main/CONTRIBUTING.md).
-- I have added tests to cover my changes at [test](https://github.com/Edirom/edirom-audio-player/tree/develop/testing)
+- I have added tests to cover my changes at [test](https://github.com/Edirom/edirom-audio-player/tree/develop/tests)
 - All new and existing tests passed.
